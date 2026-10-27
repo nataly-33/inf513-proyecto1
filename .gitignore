@@ -1,0 +1,16 @@
+# Archivos compilados
+bin/
+target/
+*.class
+*.jar
+!lib/postgresql.jar
+
+# Entornos y editores
+.idea/
+*.iml
+.vscode/
+*.log
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
