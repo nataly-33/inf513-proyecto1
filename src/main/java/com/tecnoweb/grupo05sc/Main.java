@@ -91,8 +91,6 @@ public class Main {
     private static void printBanner() {
         System.out.println("==========================================================================");
         System.out.println("   SISTEMA DE GESTIÓN VÍA EMAIL – CRM EDUCATIVO (INF513 GRUPO 05 SC)     ");
-        System.out.println("   Msc. Ing. Evans Balcázar Veizaga • Facultad de Cs. de la Computación   ");
-        System.out.println("   Integrantes: Nataly Martinez (Dev A), Nicol (Dev B), Jael (Dev C)     ");
         System.out.println("==========================================================================");
         System.out.println(" • Servidor Correo: " + Config.MAIL_HOST + " (POP3: " + Config.POP3_PORT + ", SMTP: " + Config.SMTP_PORT + ")");
         System.out.println(" • Cuenta Oficial:  " + Config.MAIL_EMISOR);

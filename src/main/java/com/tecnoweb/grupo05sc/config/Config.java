@@ -23,7 +23,7 @@ public final class Config {
         Map<String, String> map = new HashMap<>();
         File envFile = new File(".env");
         if (!envFile.exists()) {
-            envFile = new File("INF513_P1_05sc/.env");
+            envFile = new File("INF513_P1/.env");
         }
         if (envFile.exists()) {
             try (BufferedReader br = new BufferedReader(new FileReader(envFile))) {

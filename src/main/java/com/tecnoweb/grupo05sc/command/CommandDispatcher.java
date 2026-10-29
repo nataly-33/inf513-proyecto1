@@ -2,6 +2,9 @@ package com.tecnoweb.grupo05sc.command;
 
 import com.tecnoweb.grupo05sc.config.Config;
 import com.tecnoweb.grupo05sc.config.DatabaseConnection;
+import com.tecnoweb.grupo05sc.security.SecurityContext;
+import com.tecnoweb.grupo05sc.security.UsuarioAuth;
+import com.tecnoweb.grupo05sc.service.UsuarioService;
 import com.tecnoweb.grupo05sc.view.HtmlTemplate;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,6 +21,8 @@ import java.util.List;
  *   4. Delegación modular para los 8 Casos de Uso del CRM Educativo.
  */
 public final class CommandDispatcher {
+
+    private final UsuarioService usuarioService = new UsuarioService();
 
     public CommandResult dispatch(String fromEmail, String subject) {
         String cleanSubject = (subject != null) ? subject.trim() : "";
@@ -361,12 +366,23 @@ public final class CommandDispatcher {
     // =========================================================================
 
     private CommandResult handleModuloUsuarios(ParsedCommand cmd, String fromEmail) throws Exception {
-        // Se implementa en UsuarioService.java (Nataly)
-        if (cmd.getName().equals("LISTARUSUARIOS")) {
-            return listarUsuariosEnBD();
+        UsuarioAuth auth = SecurityContext.obtenerUsuario(fromEmail);
+        switch (cmd.getName()) {
+            case "LISTARUSUARIOS":
+                return usuarioService.listarUsuarios(auth);
+            case "BUSCARUSUARIO":
+                return usuarioService.buscarUsuario(auth, cmd);
+            case "CREARUSUARIO":
+                return usuarioService.crearUsuario(auth, cmd);
+            case "MODIFICARUSUARIO":
+                return usuarioService.modificarUsuario(auth, cmd);
+            case "TOGGLEUSUARIO":
+                return usuarioService.toggleUsuario(auth, cmd);
+            case "TOGGLEROUNDROBIN":
+                return usuarioService.toggleRoundRobin(auth, cmd);
+            default:
+                throw new CommandException("Comando de usuario no implementado: " + cmd.getName());
         }
-        return CommandResult.success(Config.SUBJECT_PREFIX + " " + cmd.getName(),
-            HtmlTemplate.successCard("Módulo Usuarios (CU1 - Nataly)", "Comando " + cmd.getName() + " reconocido con éxito.", "<p>Parámetros recibidos: " + cmd.getParams() + "</p>"));
     }
 
     private CommandResult handleModuloCaptacion(ParsedCommand cmd, String fromEmail) throws Exception {
