@@ -70,8 +70,8 @@ public final class Config {
     // Prefijo de respuesta para prevenir bucles infinitos de correos automáticos
     public static final String SUBJECT_PREFIX = "RE: [CRM-EDUCATIVO]";
 
-    // Intervalo de revisión del buzón POP3 (5 segundos)
-    public static final int POLL_INTERVAL_MS = 5000;
+    // Intervalo de revisión del buzón POP3 (3 segundos)
+    public static final int POLL_INTERVAL_MS = 3000;
 
     // Timeout de sockets en lectura y escritura (10 segundos)
     public static final int SOCKET_TIMEOUT_MS = 10000;

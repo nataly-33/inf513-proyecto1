@@ -156,17 +156,17 @@ java -cp "lib/postgresql.jar:bin" com.tecnoweb.grupo05sc.TestRunner
   INF513 TECNOLOGÍA WEB – GRUPO 05 SC                                     
 ==========================================================================
 
-✔ TEST 1 PASÓ: LISPER["*"] parseado correctamente.
-✔ TEST 2 PASÓ: INSPER parseado con 7 parámetros y soporte de espacios.
+✔ TEST 1 PASÓ: REGISTRARPROSPECTO parseado con 5 parámetros y soporte de espacios.
+✔ TEST 2 PASÓ: LISTARUSUARIOS[] parseado sin parámetros correctamente.
 ✔ TEST 3 PASÓ: Comando 'HELP' sin corchetes parseado como HELP[].
 ✔ TEST 4 PASÓ: Captura error semántico para asunto vacío.
-✔ TEST 5 PASÓ: LISPER["*"] ejecutado sobre PostgreSQL con tabla HTML generada.
-✔ TEST 6 PASÓ: INSPER ejecutado exitosamente con PreparedStatement.
+✔ TEST 5 PASÓ: HELP[] ejecutado con catálogo interactivo HTML.
+✔ TEST 6 PASÓ: VERKANBAN[] y BOLSACOMUN[] ejecutados contra PostgreSQL con tablas HTML.
 ✔ TEST 7 PASÓ: QUIENSOY autenticó correctamente al Administrador (Nataly).
 ✔ TEST 8 PASÓ: CU1 LISTARUSUARIOS[] ejecutado por Administrador con tabla HTML.
 ✔ TEST 9 PASÓ: CU1 Control de Acceso (RBAC) bloqueó correctamente a Vendedor.
 ✔ TEST 10 PASÓ: CU1 Bloqueó correctamente petición de remitente no registrado.
-✔ TEST 11 PASÓ: CU1 CREARUSUARIO dio de alta al usuario #5 con Round-Robin activo.
+✔ TEST 11 PASÓ: CU1 CREARUSUARIO dio de alta al usuario con Round-Robin activo.
 ✔ TEST 12 PASÓ: CU1 Bloqueó duplicidad de correo con error semántico explicativo.
 ✔ TEST 13 PASÓ: CU1 BUSCARUSUARIO encontró y formateó la ficha del usuario.
 ✔ TEST 14 PASÓ: CU1 MODIFICARUSUARIO actualizó datos y correo en PostgreSQL.

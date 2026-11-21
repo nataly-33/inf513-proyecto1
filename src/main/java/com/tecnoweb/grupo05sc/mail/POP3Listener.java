@@ -12,14 +12,13 @@ import java.util.List;
 
 /**
  * Lector de correos entrantes mediante protocolo POP3 (RFC 1939) sobre Sockets TCP puros.
- * Muestra el diálogo cliente-servidor paso a paso en consola (C: y S :) exactamente
- * como exige el docente Ing. Evans Balcázar en clases y evaluaciones.
+ * Registra el dialogo de bajo nivel en 'logs/socket_traffic.log' (Terminal 2) y eventos clave en Terminal 1.
  */
 public final class POP3Listener {
 
     /**
      * Conecta al servidor POP3, autentica al usuario, descarga los mensajes pendientes,
-     * los marca para eliminación con DELE para no reprocesarlos, y retorna la lista de mensajes.
+     * los marca para eliminacion con DELE para no reprocesarlos, y retorna la lista de mensajes.
      */
     public List<MailMessage> readPendingMessages() throws IOException {
         List<MailMessage> messages = new ArrayList<>();
@@ -28,8 +27,7 @@ public final class POP3Listener {
         DataOutputStream out = null;
 
         try {
-            System.out.println("\n============================================================");
-            System.out.println(">>> [POP3] CONECTANDO A " + Config.MAIL_HOST + ":" + Config.POP3_PORT + "...");
+            SocketLogger.info("[POP3] Conectando a servidor de correo " + Config.MAIL_HOST + ":" + Config.POP3_PORT + "...");
             socket = new Socket(Config.MAIL_HOST, Config.POP3_PORT);
             socket.setSoTimeout(Config.SOCKET_TIMEOUT_MS);
 
@@ -38,85 +36,86 @@ public final class POP3Listener {
 
             // 1. Saludo inicial del servidor POP3 (+OK ...)
             String banner = in.readLine();
-            System.out.println("S : " + banner);
+            SocketLogger.server(banner);
             if (banner == null || !banner.startsWith("+OK")) {
-                throw new IOException("Servidor POP3 rechazó la conexión: " + banner);
+                throw new IOException("Servidor POP3 rechazo la conexion: " + banner);
             }
 
             // 2. USER
             String cmdUser = "USER " + Config.POP3_USER;
-            System.out.println("C: " + cmdUser);
+            SocketLogger.client(cmdUser);
             out.writeBytes(cmdUser + "\r\n");
             out.flush();
             String respUser = in.readLine();
-            System.out.println("S : " + respUser);
+            SocketLogger.server(respUser);
             if (respUser == null || !respUser.startsWith("+OK")) {
                 throw new IOException("Error en comando USER: " + respUser);
             }
 
             // 3. PASS
             String cmdPass = "PASS " + Config.POP3_PASS;
-            System.out.println("C: " + cmdPass);
+            SocketLogger.client("PASS ********");
             out.writeBytes(cmdPass + "\r\n");
             out.flush();
             String respPass = in.readLine();
-            System.out.println("S : " + respPass);
+            SocketLogger.server(respPass);
             if (respPass == null || !respPass.startsWith("+OK")) {
-                throw new IOException("Error de autenticación PASS: " + respPass);
+                throw new IOException("Error de autenticacion PASS: " + respPass);
             }
 
-            // 4. STAT (Obtener total de mensajes y tamaño en bytes)
-            System.out.println("C: STAT");
+            // 4. STAT (Obtener total de mensajes y tamano en bytes)
+            SocketLogger.client("STAT");
             out.writeBytes("STAT\r\n");
             out.flush();
             String respStat = in.readLine();
-            System.out.println("S : " + respStat);
+            SocketLogger.server(respStat);
             if (respStat == null || !respStat.startsWith("+OK")) {
                 throw new IOException("Error en comando STAT: " + respStat);
             }
 
             String[] partesStat = respStat.split(" ");
             if (partesStat.length < 2) {
-                throw new IOException("Respuesta STAT inválida: " + respStat);
+                throw new IOException("Respuesta STAT invalida: " + respStat);
             }
 
             int totalMensajes = Integer.parseInt(partesStat[1]);
-            System.out.println(">>> [POP3] Mensajes totales en buzón: " + totalMensajes);
 
             if (totalMensajes == 0) {
-                // Si no hay mensajes, cerramos ordenadamente
-                System.out.println("C: QUIT");
+                // Sin correos pendientes
+                SocketLogger.client("QUIT");
                 out.writeBytes("QUIT\r\n");
                 out.flush();
                 String respQuit = in.readLine();
-                System.out.println("S : " + respQuit);
+                SocketLogger.server(respQuit);
                 return messages;
             }
+
+            SocketLogger.info("[POP3] " + totalMensajes + " correo(s) detectado(s) en buzon. Descargando...");
 
             // 5. Descargar cada mensaje con RETR y marcarlo para eliminar con DELE
             for (int i = 1; i <= totalMensajes; i++) {
                 String cmdRetr = "RETR " + i;
-                System.out.println("C: " + cmdRetr);
+                SocketLogger.client(cmdRetr);
                 out.writeBytes(cmdRetr + "\r\n");
                 out.flush();
 
                 String respRetr = in.readLine();
-                System.out.println("S : " + respRetr);
+                SocketLogger.server(respRetr);
                 if (respRetr == null || !respRetr.startsWith("+OK")) {
-                    System.err.println(">>> [POP3] No se pudo leer el mensaje #" + i + ": " + respRetr);
+                    SocketLogger.error("[POP3] No se pudo leer el mensaje #" + i + ": " + respRetr);
                     continue;
                 }
 
-                // Lectura multilínea terminada en un solo punto "."
+                // Lectura multilinea terminada en un solo punto "." (RFC 1939)
                 String contenidoCrudo = readMultilinePOP(in);
 
                 // Parsear encabezados y cuerpo del correo
                 MailMessage msg = parseRawEmail(i, String.valueOf(i), contenidoCrudo);
 
                 if (msg != null) {
-                    // Evitar bucles infinitos: no procesar correos que sean respuestas automáticas
+                    // Evitar bucles infinitos: ignorar correos de auto-respuesta
                     if (msg.getSubject().toUpperCase().startsWith(Config.SUBJECT_PREFIX.toUpperCase())) {
-                        System.out.println(">>> [POP3] Ignorando correo de respuesta automática (Subject: " + msg.getSubject() + ")");
+                        SocketLogger.info("[POP3] Omitiendo correo de auto-respuesta (" + msg.getSubject() + ")");
                     } else {
                         messages.add(msg);
                     }
@@ -124,20 +123,19 @@ public final class POP3Listener {
 
                 // 6. DELE (Marcar como eliminado para no reprocesarlo en la siguiente ronda)
                 String cmdDele = "DELE " + i;
-                System.out.println("C: " + cmdDele);
+                SocketLogger.client(cmdDele);
                 out.writeBytes(cmdDele + "\r\n");
                 out.flush();
                 String respDele = in.readLine();
-                System.out.println("S : " + respDele);
+                SocketLogger.server(respDele);
             }
 
-            // 7. QUIT (Aplica las eliminaciones y cierra la sesión)
-            System.out.println("C: QUIT");
+            // 7. QUIT (Aplica las eliminaciones y cierra la sesion)
+            SocketLogger.client("QUIT");
             out.writeBytes("QUIT\r\n");
             out.flush();
             String respQuit = in.readLine();
-            System.out.println("S : " + respQuit);
-            System.out.println("============================================================\n");
+            SocketLogger.server(respQuit);
 
             return messages;
 
@@ -150,7 +148,7 @@ public final class POP3Listener {
     }
 
     /**
-     * Lectura multilínea según RFC 1939: Lee líneas hasta encontrar "." solitario.
+     * Lectura multilinea segun RFC 1939: Lee lineas hasta encontrar "." solitario.
      * Implementa des-escape de puntos (Byte-Stuffing).
      */
     private static String readMultilinePOP(BufferedReader in) throws IOException {
@@ -158,12 +156,12 @@ public final class POP3Listener {
         while (true) {
             String line = in.readLine();
             if (line == null) {
-                throw new IOException("El servidor cerró abruptamente la conexión POP3.");
+                throw new IOException("El servidor cerro abruptamente la conexion POP3.");
             }
             if (line.equals(".")) {
                 break; // Fin del mensaje
             }
-            // Byte-stuffing: si la línea comienza con un punto, se retira el primer punto
+            // Byte-stuffing: si la linea comienza con un punto, se retira el primer punto
             if (line.length() > 0 && line.charAt(0) == '.') {
                 line = line.substring(1);
             }
@@ -187,7 +185,7 @@ public final class POP3Listener {
 
         for (String line : lines) {
             if (inHeaders) {
-                // Una línea en blanco marca el fin de las cabeceras
+                // Una linea en blanco marca el fin de las cabeceras
                 if (line.trim().isEmpty()) {
                     inHeaders = false;
                     continue;

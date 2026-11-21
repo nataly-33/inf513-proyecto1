@@ -11,18 +11,17 @@ import java.util.Base64;
 
 /**
  * Emisor de respuestas mediante protocolo SMTP (RFC 5321) sobre Sockets TCP puros.
- * Genera correos en formato HTML (RFC 5322 / MIME) con codificación UTF-8.
- * Muestra el diálogo cliente-servidor paso a paso en consola (C: y S :) tal
- * como exige el docente Ing. Evans Balcázar en clases y evaluaciones.
+ * Genera correos en formato HTML (RFC 5322 / MIME) con codificacion UTF-8.
+ * Registra el dialogo de bajo nivel en 'logs/socket_traffic.log' (Terminal 2) y eventos clave en Terminal 1.
  */
 public final class SMTPSender {
 
     /**
-     * Envía un correo con contenido HTML estilizado al destinatario indicado.
+     * Envia un correo con contenido HTML estilizado al destinatario indicado.
      */
     public static void sendHtmlEmail(String toEmail, String subject, String htmlContent) throws IOException {
         if (toEmail == null || toEmail.trim().isEmpty()) {
-            throw new IllegalArgumentException("El destinatario no puede ser nulo o vacío.");
+            throw new IllegalArgumentException("El destinatario no puede ser nulo o vacio.");
         }
 
         Socket socket = null;
@@ -30,8 +29,7 @@ public final class SMTPSender {
         DataOutputStream out = null;
 
         try {
-            System.out.println("\n------------------------------------------------------------");
-            System.out.println(">>> [SMTP] ENVIANDO RESPUESTA A " + toEmail + " VÍA " + Config.MAIL_HOST + ":" + Config.SMTP_PORT + "...");
+            SocketLogger.info("[SMTP] Enviando respuesta a " + toEmail + " via " + Config.MAIL_HOST + ":" + Config.SMTP_PORT + "...");
             socket = new Socket(Config.MAIL_HOST, Config.SMTP_PORT);
             socket.setSoTimeout(Config.SOCKET_TIMEOUT_MS);
 
@@ -40,56 +38,56 @@ public final class SMTPSender {
 
             // 1. Saludo inicial del servidor SMTP (220 ...)
             String banner = in.readLine();
-            System.out.println("S : " + banner);
+            SocketLogger.server(banner);
             if (banner == null || !banner.startsWith("220")) {
-                throw new IOException("Servidor SMTP no disponible o rechazó la conexión: " + banner);
+                throw new IOException("Servidor SMTP no disponible o rechazo la conexion: " + banner);
             }
 
-            // 2. HELO (Estándar de la materia)
+            // 2. HELO (Estandar de la materia)
             String cmdHelo = "HELO " + Config.MAIL_HOST;
-            System.out.println("C: " + cmdHelo);
+            SocketLogger.client(cmdHelo);
             out.writeBytes(cmdHelo + "\r\n");
             out.flush();
             String respHelo = in.readLine();
-            System.out.println("S : " + respHelo);
+            SocketLogger.server(respHelo);
             if (respHelo == null || !respHelo.startsWith("250")) {
                 throw new IOException("Error en comando HELO: " + respHelo);
             }
 
             // 3. MAIL FROM
             String cmdMail = "MAIL FROM: <" + Config.MAIL_EMISOR + ">";
-            System.out.println("C: " + cmdMail);
+            SocketLogger.client(cmdMail);
             out.writeBytes(cmdMail + "\r\n");
             out.flush();
             String respMail = in.readLine();
-            System.out.println("S : " + respMail);
+            SocketLogger.server(respMail);
             if (respMail == null || !respMail.startsWith("250")) {
                 throw new IOException("Error en comando MAIL FROM: " + respMail);
             }
 
             // 4. RCPT TO
             String cmdRcpt = "RCPT TO: <" + toEmail.trim() + ">";
-            System.out.println("C: " + cmdRcpt);
+            SocketLogger.client(cmdRcpt);
             out.writeBytes(cmdRcpt + "\r\n");
             out.flush();
             String respRcpt = in.readLine();
-            System.out.println("S : " + respRcpt);
+            SocketLogger.server(respRcpt);
             if (respRcpt == null || !respRcpt.startsWith("250")) {
                 throw new IOException("Error en comando RCPT TO para <" + toEmail + ">: " + respRcpt);
             }
 
             // 5. DATA
-            System.out.println("C: DATA");
+            SocketLogger.client("DATA");
             out.writeBytes("DATA\r\n");
             out.flush();
             String respData = in.readLine();
-            System.out.println("S : " + respData);
+            SocketLogger.server(respData);
             if (respData == null || !respData.startsWith("354")) {
                 throw new IOException("Error en comando DATA: " + respData);
             }
 
-            // 6. Transmisión del mensaje (Cabeceras RFC 5322 + Línea en blanco + Cuerpo HTML)
-            // Codificación segura Base64 del Asunto según RFC 2047 (sin usar librerías externas)
+            // 6. Transmision del mensaje (Cabeceras RFC 5322 + Linea en blanco + Cuerpo HTML)
+            // Codificacion segura Base64 del Asunto segun RFC 2047
             String encodedSubject = "=?UTF-8?B?" + Base64.getEncoder().encodeToString(subject.getBytes(StandardCharsets.UTF_8)) + "?=";
 
             StringBuilder rfcMessage = new StringBuilder();
@@ -99,31 +97,31 @@ public final class SMTPSender {
             rfcMessage.append("MIME-Version: 1.0\r\n");
             rfcMessage.append("Content-Type: text/html; charset=UTF-8\r\n");
             rfcMessage.append("Content-Transfer-Encoding: 8bit\r\n");
-            rfcMessage.append("\r\n"); // Línea en blanco que separa cabeceras del cuerpo (OBLIGATORIA)
+            rfcMessage.append("\r\n"); // Linea en blanco que separa cabeceras del cuerpo (OBLIGATORIA)
             rfcMessage.append(htmlContent).append("\r\n");
             rfcMessage.append(".\r\n"); // Fin del bloque DATA: <CRLF>.<CRLF>
 
-            System.out.println("C: [Enviando cabeceras MIME y cuerpo HTML]");
-            System.out.println("C: .");
+            SocketLogger.client("[Cabeceras MIME y cuerpo HTML]");
+            SocketLogger.client(".");
 
             // Escritura en UTF-8 hacia el flujo de salida
             out.write(rfcMessage.toString().getBytes(StandardCharsets.UTF_8));
             out.flush();
 
             String respEnvio = in.readLine();
-            System.out.println("S : " + respEnvio);
+            SocketLogger.server(respEnvio);
             if (respEnvio == null || !respEnvio.startsWith("250")) {
                 throw new IOException("Error al transmitir datos del correo: " + respEnvio);
             }
 
             // 7. QUIT
-            System.out.println("C: QUIT");
+            SocketLogger.client("QUIT");
             out.writeBytes("QUIT\r\n");
             out.flush();
             String respQuit = in.readLine();
-            System.out.println("S : " + respQuit);
-            System.out.println(">>> [SMTP] Correo enviado satisfactoriamente a " + toEmail);
-            System.out.println("------------------------------------------------------------\n");
+            SocketLogger.server(respQuit);
+
+            SocketLogger.info("[SMTP] Correo entregado satisfactoriamente a: " + toEmail);
 
         } finally {
             // Doctrina de la materia: Cierre garantizado en orden inverso en bloque finally

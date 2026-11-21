@@ -1,0 +1,120 @@
+# 📑 ANEXO TÉCNICO: CATÁLOGO OFICIAL DE COMANDOS DEL SISTEMA VÍA EMAIL
+### INF513 - Tecnología Web | Grupo 05 SC | Docente: Msc. Ing. Evans Balcázar Veizaga
+### Sistema Automatizado vía Correo Electrónico – CRM Educativo UNEXO
+
+---
+
+## 📌 Protocolo de Comunicación y Sintaxis de Petición
+
+El sistema opera bajo una arquitectura asíncrona guiada por eventos de correo electrónico:
+* **Entrada (Request):** Se envía en el **Asunto (Subject)** del correo electrónico dirigido a `grupo05sc@tecnoweb.org.bo`.
+* **Formato Estándar:** `COMANDO["parámetro_1", "parámetro_2", ...]`
+* **Comandos sin parámetros:** Admiten tanto `COMANDO[]` como `COMANDO` (tolerante a espacios).
+* **Parámetros de texto con espacios:** Deben ir obligatoriamente delimitados por comillas dobles `"`.
+* **Salida (Response):** El sistema responde al buzón del remitente con un correo HTML estructurado bajo el prefijo `RE: [CRM-EDUCATIVO]`.
+
+---
+
+## 🏛️ Catálogo Completo por Casos de Uso (42 Comandos Oficiales)
+
+### 1. Comandos Generales y Autenticación
+
+| Comando | Sintaxis Exacta | Roles Permitidos | Descripción / Resultado Esperado |
+| :--- | :--- | :---: | :--- |
+| **`HELP`** | `HELP[]` o `HELP["COMANDO"]` | Todos / Público | Devuelve la tabla completa con los 42 comandos institucionales o la ficha detallada de uno en particular. |
+| **`QUIENSOY`** | `QUIENSOY[]` | Todos / Registrados | Consulta en PostgreSQL la identidad, nombre completo, rol institucional y estado de cuenta del remitente del correo. |
+
+---
+
+### 2. CU1: Gestión de Usuarios Institucionales (Nataly)
+
+| Comando | Sintaxis Exacta | Roles Permitidos | Descripción / Resultado Esperado |
+| :--- | :--- | :---: | :--- |
+| **`LISTARUSUARIOS`** | `LISTARUSUARIOS[]` | Administrador | Lista todos los usuarios con su ID, nombre, correo institucional, rol, estado operativo y participación en Round-Robin. |
+| **`BUSCARUSUARIO`** | `BUSCARUSUARIO["termino"]` | Administrador | Busca un usuario por coincidencia de ID numérico, correo exacto o coincidencia parcial de nombre. |
+| **`CREARUSUARIO`** | `CREARUSUARIO["nombre", "correo", "pass", "rol"]` | Administrador | Da de alta una nueva cuenta institucional. Cifra la contraseña con algoritmo SHA-256 nativo. |
+| **`MODIFICARUSUARIO`** | `MODIFICARUSUARIO["id", "nombre", "correo", "rol"]` | Administrador | Actualiza nombre, correo y rol de un usuario existente validando unicidad de correo institucional. |
+| **`TOGGLEUSUARIO`** | `TOGGLEUSUARIO["id_usuario"]` | Administrador | Alterna el estado operativo (Activo $\leftrightarrow$ Inactivo). Aplica la **Regla de Oro Anti-Autobloqueo** del Administrador. |
+| **`TOGGLEROUNDROBIN`** | `TOGGLEROUNDROBIN["id_usuario"]` | Administrador | Incluye o excluye a un vendedor del reparto automático equitativo de nuevos prospectos. |
+
+---
+
+### 3. CU2: Captación de Leads y Oferta Académica (Jael)
+
+| Comando | Sintaxis Exacta | Roles Permitidos | Descripción / Resultado Esperado |
+| :--- | :--- | :---: | :--- |
+| **`REGISTRARPROSPECTO`** | `REGISTRARPROSPECTO["nom", "telf", "mail", "origen", "prof"]` | Todos / Público | Da de alta un nuevo prospecto interesado en etapa 1 (*Nuevo*) y lo ubica en la Bolsa Común (`id_vendedor = NULL`). |
+| **`VINCULARINTERES`** | `VINCULARINTERES["id_lead", "tipo", "id_ext", "curso"]` | Admin, Coord, Vend | Registra en `lead_interes` el interés por un programa o módulo con su precio e instantánea. |
+| **`LISTARINTERESES`** | `LISTARINTERESES["id_lead"]` | Admin, Coord, Vend | Lista todos los cursos, versiones o diplomados en los que ha mostrado interés un prospecto. |
+| **`LISTARORIGENES`** | `LISTARORIGENES[]` | Admin, Coord, Vend | Lista el catálogo institucional de canales de captación (Facebook Ads, WhatsApp, Web, Feria, etc.). |
+| **`LISTARPROFESIONES`** | `LISTARPROFESIONES[]` | Admin, Coord, Vend | Lista el catálogo de profesiones u ocupaciones registradas en el sistema. |
+
+---
+
+### 4. CU3: Asignación de Prospectos a la Fuerza de Ventas (Nicol)
+
+| Comando | Sintaxis Exacta | Roles Permitidos | Descripción / Resultado Esperado |
+| :--- | :--- | :---: | :--- |
+| **`BOLSACOMUN`** | `BOLSACOMUN[]` | Admin, Coordinador | Muestra la lista de prospectos entrantes pendientes de atención comercial (`id_vendedor IS NULL`). |
+| **`ASIGNARMANUAL`** | `ASIGNARMANUAL["id_lead", "id_vendedor"]` | Admin, Coordinador | Asigna formalmente un prospecto a un vendedor específico, registrando el traspaso en auditoría. |
+| **`EJECUTARROUNDROBIN`**| `EJECUTARROUNDROBIN[]` | Admin, Coordinador | Distribuye de manera equitativa y rotativa los prospectos de la bolsa común entre los vendedores activos. |
+| **`TRANSFERIRLEAD`** | `TRANSFERIRLEAD["id_lead", "id_nuevo_vend", "motivo"]` | Admin, Coordinador | Reasigna un prospecto de un vendedor a otro, exigiendo obligatoriamente el motivo formal del cambio. |
+| **`HISTORIALASIGNACIONES`**| `HISTORIALASIGNACIONES["id_lead"]` | Admin, Coordinador | Despliega la traza histórica completa de todas las asignaciones y transferencias que ha tenido el lead. |
+
+---
+
+### 5. CU4: Embudo de Ventas Comercial en Tablero Kanban (Nicol)
+
+| Comando | Sintaxis Exacta | Roles Permitidos | Descripción / Resultado Esperado |
+| :--- | :--- | :---: | :--- |
+| **`VERKANBAN`** | `VERKANBAN[]` o `VERKANBAN["id_vendedor"]` | Admin, Coord, Vend | Renderiza el tablero comercial consolidado con el total de prospectos en cada una de las 6 etapas. |
+| **`LEADSETAPA`** | `LEADSETAPA["id_etapa"]` | Admin, Coord, Vend | Lista con detalle los prospectos que se encuentran en una etapa específica (1 a 6). |
+| **`MOVERETAPA`** | `MOVERETAPA["id_lead", "id_nueva_etapa"]` | Admin, Coord, Vend | Avanza o retrocede de etapa al prospecto en el embudo comercial, auditando el cambio en la bitácora. |
+| **`MISLEADS`** | `MISLEADS[]` | Vendedor | Lista de forma exclusiva los prospectos que pertenecen a la cartera comercial del vendedor remitente. |
+
+---
+
+### 6. CU5: Gestión de Pérdida y Desistimiento de Prospectos (Nicol)
+
+| Comando | Sintaxis Exacta | Roles Permitidos | Descripción / Resultado Esperado |
+| :--- | :--- | :---: | :--- |
+| **`LISTARMOTIVOSPERDIDA`**| `LISTARMOTIVOSPERDIDA[]` | Admin, Coord, Vend | Consulta el catálogo de motivos de pérdida (Factor económico, Horario no disponible, Sin respuesta, etc.). |
+| **`MARCARPERDIDO`** | `MARCARPERDIDO["id_lead", "id_motivo", "comentario"]` | Admin, Coord, Vend | Pasa el lead a la Etapa 6 (*Perdido*), exigiendo obligatoriamente un motivo formal y comentario justificativo. |
+| **`LISTARPERDIDOS`** | `LISTARPERDIDOS[]` | Admin, Coord, Vend | Lista todos los prospectos clasificados como perdidos con sus correspondientes razones y fechas. |
+
+---
+
+### 7. CU6: Validación de Datos, Pagos y Conversión a Matrícula (Nataly)
+
+| Comando | Sintaxis Exacta | Roles Permitidos | Descripción / Resultado Esperado |
+| :--- | :--- | :---: | :--- |
+| **`REGISTRARCOMPROBANTE`**| `REGISTRARCOMPROBANTE["id_lead", "banco", "nro_trans", "monto"]` | Admin, Coord, Vend | Registra un comprobante de transferencia o depósito bancario con estado inicial `PENDIENTE`. |
+| **`PAGOSPENDIENTES`** | `PAGOSPENDIENTES[]` | Administrador | Lista la cola de comprobantes bancarios en espera de revisión y aprobación administrativa. |
+| **`APROBARPAGO`** | `APROBARPAGO["id_comprobante"]` | Administrador | Valida y aprueba el pago realizado, habilitando la conversión oficial del prospecto a alumno. |
+| **`RECHAZARPAGO`** | `RECHAZARPAGO["id_comprobante", "motivo"]` | Administrador | Rechaza un comprobante inconsistente registrando la observación para que el vendedor subsane el error. |
+| **`COMPLETARDATOSALUMNO`**| `COMPLETARDATOSALUMNO["id_lead", "ci", "fecha_nac", "ciudad"]` | Admin, Coord, Vend | Registra los datos formales exigidos para el expediente académico del nuevo alumno. |
+| **`CONVERTIRAMATRICULA`**| `CONVERTIRAMATRICULA["id_lead"]` | Administrador | Valida pago aprobado y datos de alumno completos, pasa a Etapa 5 (*Convertido*) y emite constancia de matrícula. |
+
+---
+
+### 8. CU7: Bitácora Histórica, Interacciones y Recordatorios (Nataly)
+
+| Comando | Sintaxis Exacta | Roles Permitidos | Descripción / Resultado Esperado |
+| :--- | :--- | :---: | :--- |
+| **`VERBITACORA`** | `VERBITACORA["id_lead"]` | Admin, Coord, Vend | Genera la línea de tiempo (timeline) cronológica completa de eventos, llamadas y cambios de etapa del prospecto. |
+| **`AGREGARNOTA`** | `AGREGARNOTA["id_lead", "contenido_nota"]` | Admin, Coord, Vend | Inserta una nota cualitativa sobre una reunión o conversación comercial en la bitácora del prospecto. |
+| **`CREARRECORDATORIO`**| `CREARRECORDATORIO["id_lead", "yyyy-MM-dd HH:mm", "desc"]` | Vendedor | Programa una alerta o tarea futura (ej. llamar para confirmar depósito) con fecha y hora exacta. |
+| **`MISRECORDATORIOS`** | `MISRECORDATORIOS[]` | Vendedor | Lista las tareas y recordatorios pendientes asignados exclusivamente al vendedor que envía el correo. |
+| **`COMPLETARRECORDATORIO`**| `COMPLETARRECORDATORIO["id_recordatorio"]` | Vendedor | Marca un recordatorio como atendido o finalizado. |
+
+---
+
+### 9. CU8: Reportes Estadísticos y Cuadros de Mando (Jael)
+
+| Comando | Sintaxis Exacta | Roles Permitidos | Descripción / Resultado Esperado |
+| :--- | :--- | :---: | :--- |
+| **`REPORTEEMBUDO`** | `REPORTEEMBUDO[]` | Administrador, Coord | Muestra el volumen total y porcentaje de distribución de prospectos a lo largo de las 6 etapas del pipeline. |
+| **`REPORTECONVERSION`** | `REPORTECONVERSION[]` | Administrador, Coord | Calcula la tasa global de conversión de prospectos a alumnos matriculados y el rendimiento por vendedor. |
+| **`REPORTEORIGENES`** | `REPORTEORIGENES[]` | Administrador, Coord | Muestra el ranking y volumen de prospectos captados agrupados por canal de origen. |
+| **`REPORTEMOTIVOSPERDIDA`**| `REPORTEMOTIVOSPERDIDA[]` | Administrador, Coord | Desglosa estadísticamente las principales causas de deserción de clientes para retroalimentación. |
+| **`DASHBOARDVENDEDOR`** | `DASHBOARDVENDEDOR[]` | Vendedor | Despliega el panel de control individual con métricas personales de prospectos asignados, activos y cerrados. |

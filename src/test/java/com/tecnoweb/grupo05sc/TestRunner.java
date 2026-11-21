@@ -27,13 +27,13 @@ public class TestRunner {
         limpiarUsuarioPrueba("mariana.modificada@crm.bo");
 
         // -------------------------------------------------------------
-        // TEST 1: CommandParser con LISPER["*"]
+        // TEST 1: CommandParser con sintaxis estándar de comando CRM
         // -------------------------------------------------------------
         totalTests++;
         try {
-            ParsedCommand cmd = CommandParser.parse("LISPER[\"*\"]");
-            if (cmd.getName().equals("LISPER") && cmd.paramCount() == 1 && cmd.getParam(0).equals("*")) {
-                System.out.println("✔ TEST 1 PASÓ: LISPER[\"*\"] parseado correctamente.");
+            ParsedCommand cmd = CommandParser.parse("REGISTRARPROSPECTO[\"Carlos Andres\",\"70012345\",\"carlos@gmail.com\",\"Facebook\",\"Ingeniero\"]");
+            if (cmd.getName().equals("REGISTRARPROSPECTO") && cmd.paramCount() == 5 && cmd.getParam(0).equals("Carlos Andres")) {
+                System.out.println("✔ TEST 1 PASÓ: REGISTRARPROSPECTO parseado con 5 parámetros y soporte de espacios.");
                 testsPassed++;
             } else {
                 System.err.println("❌ TEST 1 FALLÓ: " + cmd);
@@ -43,14 +43,13 @@ public class TestRunner {
         }
 
         // -------------------------------------------------------------
-        // TEST 2: CommandParser con INSPER de 7 parámetros
+        // TEST 2: CommandParser con comando sin parámetros COMANDO[]
         // -------------------------------------------------------------
         totalTests++;
         try {
-            String insperSubj = "INSPER[\"4715292\",\"Juan Carlos\",\"Perez Seras\",\"Estudiante\",\"33554433\",\"71055123\",\"juanperez@uagrm.edu.bo\"]";
-            ParsedCommand cmd = CommandParser.parse(insperSubj);
-            if (cmd.getName().equals("INSPER") && cmd.paramCount() == 7 && cmd.getParam(1).equals("Juan Carlos")) {
-                System.out.println("✔ TEST 2 PASÓ: INSPER parseado con 7 parámetros y soporte de espacios.");
+            ParsedCommand cmd = CommandParser.parse("LISTARUSUARIOS[]");
+            if (cmd.getName().equals("LISTARUSUARIOS") && cmd.paramCount() == 0) {
+                System.out.println("✔ TEST 2 PASÓ: LISTARUSUARIOS[] parseado sin parámetros correctamente.");
                 testsPassed++;
             } else {
                 System.err.println("❌ TEST 2 FALLÓ: " + cmd);
@@ -88,13 +87,13 @@ public class TestRunner {
         }
 
         // -------------------------------------------------------------
-        // TEST 5: CommandDispatcher ejecuta LISPER["*"] sobre PostgreSQL
+        // TEST 5: CommandDispatcher ejecuta HELP[] generando catálogo HTML
         // -------------------------------------------------------------
         totalTests++;
         try {
-            CommandResult result = dispatcher.dispatch("nataly.vane.mm@gmail.com", "LISPER[\"*\"]");
-            if (result.isSuccess() && result.getHtmlBody().contains("Listado de Personas Registradas")) {
-                System.out.println("✔ TEST 5 PASÓ: LISPER[\"*\"] ejecutado sobre PostgreSQL con tabla HTML generada.");
+            CommandResult result = dispatcher.dispatch("admin@crm.bo", "HELP[]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Catalogo") && result.getHtmlBody().contains("LISTARUSUARIOS")) {
+                System.out.println("✔ TEST 5 PASÓ: HELP[] ejecutado con catálogo interactivo HTML.");
                 testsPassed++;
             } else {
                 System.err.println("❌ TEST 5 FALLÓ: " + result.getHtmlBody());
@@ -104,17 +103,18 @@ public class TestRunner {
         }
 
         // -------------------------------------------------------------
-        // TEST 6: CommandDispatcher ejecuta INSPER sobre PostgreSQL
+        // TEST 6: CommandDispatcher ejecuta VERKANBAN[] y BOLSACOMUN[] sobre PostgreSQL
         // -------------------------------------------------------------
         totalTests++;
         try {
-            String insperSubj = "INSPER[\"9988776\",\"Carlos Andres\",\"Vaca Diez\",\"Abogado\",\"33112233\",\"77009988\",\"carlos.vaca@uagrm.edu.bo\"]";
-            CommandResult result = dispatcher.dispatch("nataly.vane.mm@gmail.com", insperSubj);
-            if (result.isSuccess() && result.getHtmlBody().contains("Operación Exitosa")) {
-                System.out.println("✔ TEST 6 PASÓ: INSPER ejecutado exitosamente con PreparedStatement.");
+            CommandResult resultKanban = dispatcher.dispatch("admin@crm.bo", "VERKANBAN[]");
+            CommandResult resultBolsa = dispatcher.dispatch("admin@crm.bo", "BOLSACOMUN[]");
+            if (resultKanban.isSuccess() && resultKanban.getHtmlBody().contains("Tablero Kanban") &&
+                resultBolsa.isSuccess() && resultBolsa.getHtmlBody().contains("Bolsa")) {
+                System.out.println("✔ TEST 6 PASÓ: VERKANBAN[] y BOLSACOMUN[] ejecutados contra PostgreSQL con tablas HTML.");
                 testsPassed++;
             } else {
-                System.err.println("❌ TEST 6 FALLÓ: " + result.getHtmlBody());
+                System.err.println("❌ TEST 6 FALLÓ: " + resultKanban.getHtmlBody());
             }
         } catch (Exception e) {
             System.err.println("❌ TEST 6 EXCEPCIÓN: " + e.getMessage());
