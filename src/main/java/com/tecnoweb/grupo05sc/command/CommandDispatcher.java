@@ -24,6 +24,7 @@ import java.util.List;
 public final class CommandDispatcher {
 
     private final UsuarioService usuarioService = new UsuarioService();
+    private final com.tecnoweb.grupo05sc.service.LeadService leadService = new com.tecnoweb.grupo05sc.service.LeadService();
 
     private static final List<String> COMANDOS_VALIDOS = Arrays.asList(
         "HELP", "AYUDA", "QUIENSOY",
@@ -343,8 +344,21 @@ public final class CommandDispatcher {
     }
 
     private CommandResult handleModuloCaptacion(ParsedCommand cmd, String fromEmail) throws Exception {
-        return CommandResult.success(Config.SUBJECT_PREFIX + " " + cmd.getName(),
-            HtmlTemplate.successCard("Modulo Captacion (CU2 - Jael)", "Comando " + cmd.getName() + " reconocido con exito.", "<p>Parametros recibidos: " + cmd.getParams() + "</p>"));
+        UsuarioAuth auth = SecurityContext.obtenerUsuario(fromEmail);
+        switch (cmd.getName()) {
+            case "REGISTRARPROSPECTO":
+                return leadService.registrarProspecto(auth, cmd);
+            case "VINCULARINTERES":
+                return leadService.vincularInteres(auth, cmd);
+            case "LISTARINTERESES":
+                return leadService.listarIntereses(auth, cmd);
+            case "LISTARORIGENES":
+                return leadService.listarOrigenes(auth);
+            case "LISTARPROFESIONES":
+                return leadService.listarProfesiones(auth);
+            default:
+                throw new CommandException("Comando de captacion no implementado: " + cmd.getName());
+        }
     }
 
     private CommandResult handleModuloAsignacion(ParsedCommand cmd, String fromEmail) throws Exception {

@@ -1,216 +1,351 @@
-# 🛡️ Guía Paso a Paso y Explicación Detallada: Caso de Uso 1 (CU1 - Gestión de Usuarios)
-## Sistema vía Correo Electrónico — CRM Educativo (Grupo 05 SC)
-
-> **Materia:** Tecnología Web (INF513 - SC)  
-> **Docente:** Msc. Ing. Evans Balcázar Veizaga  
-> **Responsable del Caso de Uso 1:** Nataly Vanessa Martinez Martinez (Dev A)  
-> **Carpeta Oficial del Proyecto (Git):** [**`INF513_P1/`**](file:///home/nataly/Projects/TECNO/crm_correo/INF513_P1)
+# 🛡️ GUÍA DE PRUEBA MANUAL PASO A PASO: CASO DE USO 1 (CU1 - GESTIÓN DE USUARIOS)
+### INF513 - Tecnología Web | Grupo 05 SC | Docente: Msc. Ing. Evans Balcázar Veizaga
+### Responsable Oficial: Nataly Vanessa Martinez Martinez (Dev A)
 
 ---
 
-## 📌 1. Organización del Proyecto y Carpeta Oficial
+## 📌 1. Instrucciones Previas para la Verificación Manual
 
-* **Eliminación del enlace:** Se eliminó por completo el enlace simbólico `INF513_P1_05sc`.
-* **Carpeta Oficial Única:** Todo el código fuente, configuración, dependencias y pruebas se encuentran centralizados en tu repositorio Git oficial: **`INF513_P1/`**.
-* **Configuración Local:** El archivo [**`INF513_P1/.env`**](file:///home/nataly/Projects/TECNO/crm_correo/INF513_P1/.env) mantiene activas las credenciales locales de PostgreSQL (`crm_educativo`, usuario `postgres`, puerto `5432`).
-
----
-
-## 📂 2. ¿Qué archivos se crearon y para qué sirve cada uno?
-
-Para implementar el **Caso de Uso 1 (Gestión de Usuarios)** con arquitectura profesional en capas limpias y seguras, se añadieron los siguientes componentes:
-
-```
-INF513_P1/src/main/java/com/tecnoweb/grupo05sc/
-├── security/
-│   ├── UsuarioAuth.java        # DTO de identidad y permisos del remitente
-│   └── SecurityContext.java    # Control de Acceso Basado en Roles (RBAC)
-├── dao/
-│   └── UsuarioDao.java         # Consultas SQL con PreparedStatement (anti-inyección)
-├── service/
-│   └── UsuarioService.java     # Lógica de Negocio y Reglas Institucionales (Nataly)
-└── command/
-    └── CommandDispatcher.java  # Conexión entre los comandos por correo y el servicio
-```
+Para realizar la verificación manual de cada comando:
+1. Asegúrate de que el servidor PostgreSQL esté corriendo en tu máquina local (`crm_educativo`).
+2. Abre **Terminal 1** en `/home/nataly/Projects/TECNO/crm_correo/INF513_P1` e inicia el servidor de correos:
+   ```bash
+   cd /home/nataly/Projects/TECNO/crm_correo/INF513_P1
+   java -cp "lib/postgresql.jar:bin" com.tecnoweb.grupo05sc.Main
+   ```
+3. *(Opcional)* Abre **Terminal 2** para auditar los Sockets TCP en vivo:
+   ```bash
+   tail -f /home/nataly/Projects/TECNO/crm_correo/INF513_P1/logs/socket_traffic.log
+   ```
+4. Abre **Terminal 3** con `psql` para verificar la base de datos en tiempo real:
+   ```bash
+   psql -U postgres -d crm_educativo
+   ```
+5. Desde tu cliente de correo (Gmail, Thunderbird, etc.), envía los correos a la cuenta oficial:
+   **Destinatario:** `grupo05sc@tecnoweb.org.bo`
 
 ---
 
-### 🔹 2.1. `UsuarioAuth.java` (Capa de Seguridad)
-📁 [**`INF513_P1/src/main/java/com/tecnoweb/grupo05sc/security/UsuarioAuth.java`**](file:///home/nataly/Projects/TECNO/crm_correo/INF513_P1/src/main/java/com/tecnoweb/grupo05sc/security/UsuarioAuth.java)
-
-* **¿Para qué sirve?**  
-  Representa al usuario del sistema una vez resuelta su identidad a partir del remitente del correo (`From:`).
-* **Atributos:** `idUsuario`, `nombreCompleto`, `correo`, `idRol`, `rolNombre`, `activo`, `participaRoundRobin`.
-* **Métodos clave:**
-  * `esAdmin()`: Retorna `true` si `idRol == 1` o el nombre es `"Administrador"`.
-  * `esCoordinador()`: Retorna `true` si `idRol == 2`.
-  * `esVendedor()`: Retorna `true` si `idRol == 3`.
-  * `isActivo()`: Indica si la cuenta está habilitada para operar.
+## 📋 2. Banco Exhaustivo de Pruebas Comando por Comando
 
 ---
 
-### 🔹 2.2. `SecurityContext.java` (Control de Acceso RBAC)
-📁 [**`INF513_P1/src/main/java/com/tecnoweb/grupo05sc/security/SecurityContext.java`**](file:///home/nataly/Projects/TECNO/crm_correo/INF513_P1/src/main/java/com/tecnoweb/grupo05sc/security/SecurityContext.java)
-
-* **¿Para qué sirve?**  
-  Es el guardián de seguridad del sistema. Extrae la dirección limpia de correo y consulta en PostgreSQL para validar qué acciones tiene permitido ejecutar el remitente.
-* **Métodos principales:**
-  * `obtenerUsuario(String fromEmail)`: Ejecuta una consulta segura con `PreparedStatement` sobre la tabla `usuarios` uniéndola con `roles`. Retorna el objeto `UsuarioAuth` correspondiente o `null` si es un remitente no registrado.
-  * `validarAdmin(UsuarioAuth auth)`:
-    * Si el usuario no existe: Lanza `CommandException("Acceso denegado: El correo remitente no corresponde a un usuario registrado...")`.
-    * Si el usuario está inactivo: Lanza `CommandException("Acceso denegado: Su cuenta de usuario se encuentra desactivada.")`.
-    * Si no es Administrador: Lanza `CommandException("Acceso denegado: Esta acción es exclusiva para usuarios con rol 'Administrador'. Su rol actual es '...'.")`.
-  * `validarPersonal(UsuarioAuth auth)`: Valida que pertenezca al personal activo de la facultad.
-
----
-
-### 🔹 2.3. `UsuarioDao.java` (Capa de Acceso a Datos - JDBC)
-📁 [**`INF513_P1/src/main/java/com/tecnoweb/grupo05sc/dao/UsuarioDao.java`**](file:///home/nataly/Projects/TECNO/crm_correo/INF513_P1/src/main/java/com/tecnoweb/grupo05sc/dao/UsuarioDao.java)
-
-* **¿Para qué sirve?**  
-  Encapsula todas las operaciones SQL sobre las tablas `usuarios` y `roles` garantizando que **ningún dato se concatene directamente** (prevención total de inyecciones SQL).
-* **Métodos implementados:**
-  1. `listarTodos()`: `SELECT` con `JOIN roles` ordenado por `id_usuario ASC`.
-  2. `buscarPorIdOCorreo(String termino)`: Detecta automáticamente si el término es numérico (busca por `id_usuario`) o alfanumérico (busca por coincidencia de correo o nombre).
-  3. `buscarPorId(long idUsuario)`: Obtiene la ficha de un usuario específico.
-  4. `existeCorreo(String correo)`: Valida si una cuenta ya existe para evitar duplicados en la base de datos.
-  5. `existeCorreoExcepto(String correo, long idUsuario)`: Valida que al modificar un usuario, su nuevo correo no colisione con el de otro usuario registrado.
-  6. `insertar(nombre, correo, passwordHash, idRol)`: Inserta un nuevo usuario y devuelve su `id_usuario` autogenerado con `RETURN_GENERATED_KEYS`. Si el rol es `Vendedor` (rol 3), asigna `participa_round_robin = true` por defecto.
-  7. `actualizar(idUsuario, nombre, correo, idRol)`: Modifica los datos institucionales del personal.
-  8. `toggleActivo(idUsuario)`: Ejecuta `UPDATE usuarios SET activo = NOT activo WHERE id_usuario = ?`.
-  9. `toggleRoundRobin(idUsuario)`: Ejecuta `UPDATE usuarios SET participa_round_robin = NOT participa_round_robin WHERE id_usuario = ?`.
-  10. `obtenerIdRolPorNombre(String rolNombre)`: Convierte cadenas como `"Administrador"`, `"Coordinador"` o `"Vendedor"` a su correspondiente ID foráneo en PostgreSQL.
-
----
-
-### 🔹 2.4. `UsuarioService.java` (Capa de Negocio - Módulo de Nataly)
-📁 [**`INF513_P1/src/main/java/com/tecnoweb/grupo05sc/service/UsuarioService.java`**](file:///home/nataly/Projects/TECNO/crm_correo/INF513_P1/src/main/java/com/tecnoweb/grupo05sc/service/UsuarioService.java)
-
-* **¿Para qué sirve?**  
-  Contiene la lógica de negocio y las validaciones de las reglas institucionales exigidas por el docente para el Caso de Uso 1.
-* **Comandos implementados:**
-  1. `LISTARUSUARIOS[]`:
-     * Valida permisos de Administrador.
-     * Genera una tabla HTML corporativa con columnas: `ID`, `NOMBRE COMPLETO`, `CORREO`, `ROL`, `ESTADO` (con color verde para Activo y rojo para Inactivo), `ROUND-ROBIN` y `ÚLTIMO ACCESO`.
-  2. `BUSCARUSUARIO["correo_o_id"]`:
-     * Permite localizar a un usuario por su número de ID o por su dirección de correo.
-     * Retorna una ficha estilizada con todos sus atributos y fecha de alta.
-  3. `CREARUSUARIO["nombre", "correo", "password", "rol"]`:
-     * Valida que ninguno de los 4 campos esté vacío.
-     * Valida el formato del correo mediante expresión regular.
-     * Valida unicidad (rechaza si el correo ya está registrado).
-     * Valida que el rol exista en la institución.
-     * **Hashea la contraseña con algoritmo SHA-256 estándar** (`hashPassword`), sin usar librerías externas.
-     * Inserta y retorna tarjeta verde de confirmación con el ID asignado.
-  4. `MODIFICARUSUARIO["id", "nombre", "correo", "rol"]`:
-     * Valida existencia previa del usuario.
-     * Valida que el nuevo correo no esté en uso por otra persona.
-     * Actualiza y devuelve confirmación.
-  5. `TOGGLEUSUARIO["id"]`:
-     * **REGLA DE ORO DE SEGURIDAD (PROTECCIÓN DE AUTOBLOQUEO):**  
-       Si el Administrador autenticado intenta desactivar o bloquear su propia cuenta (`idUsuario == auth.getIdUsuario()`), el sistema lo bloquea en seco y lanza:  
-       *"Operación denegada por seguridad: El Administrador no puede desactivar ni bloquear su propia cuenta. Para dar de baja esta cuenta, otro Administrador debe realizar la solicitud."*
-     * Si es otro usuario: Invierte su estado (Activo ➔ Inactivo o viceversa) y devuelve una tarjeta informando el nuevo estado operativo de la cuenta.
-  6. `TOGGLEROUNDROBIN["id"]`:
-     * Valida que el usuario tenga rol `Vendedor` (rol 3). Si un Administrador intenta aplicarlo a un Coordinador, el sistema le informa que la rotación de prospectos solo aplica a agentes comerciales.
-     * Alterna la participación y responde informando si el vendedor ahora recibirá o no prospectos automáticos.
-
----
-
-### 🔹 2.5. `CommandDispatcher.java` (Enrutador de Comandos)
-📁 [**`INF513_P1/src/main/java/com/tecnoweb/grupo05sc/command/CommandDispatcher.java`**](file:///home/nataly/Projects/TECNO/crm_correo/INF513_P1/src/main/java/com/tecnoweb/grupo05sc/command/CommandDispatcher.java)
-
-* Conecta los comandos recibidos por correo con `UsuarioService` pasando el `UsuarioAuth` autenticado:
-  ```java
-  private CommandResult handleModuloUsuarios(ParsedCommand cmd, String fromEmail) throws Exception {
-      UsuarioAuth auth = SecurityContext.obtenerUsuario(fromEmail);
-      switch (cmd.getName()) {
-          case "LISTARUSUARIOS":   return usuarioService.listarUsuarios(auth);
-          case "BUSCARUSUARIO":    return usuarioService.buscarUsuario(auth, cmd);
-          case "CREARUSUARIO":     return usuarioService.crearUsuario(auth, cmd);
-          case "MODIFICARUSUARIO": return usuarioService.modificarUsuario(auth, cmd);
-          case "TOGGLEUSUARIO":    return usuarioService.toggleUsuario(auth, cmd);
-          case "TOGGLEROUNDROBIN": return usuarioService.toggleRoundRobin(auth, cmd);
-          default: throw new CommandException("Comando no implementado: " + cmd.getName());
-      }
-  }
+### 🔹 PRUEBA 1.1: `LISTARUSUARIOS[]` (Flujo Exitoso)
+* **Objetivo:** Obtener la tabla general de todo el personal institucional registrado.
+* **Remitente Requerido (`From:`):** `admin@crm.bo` *(o correo registrado con rol Administrador)*.
+* **Asunto a Enviar (Exacto):**
+  ```text
+  LISTARUSUARIOS[]
+  ```
+  *(También se admite sin corchetes: `LISTARUSUARIOS`)*.
+* **Asunto de Respuesta del Correo:**
+  ```text
+  RE: [CRM-EDUCATIVO] Listado de Usuarios
+  ```
+* **Contenido HTML que Recibirás en tu Bandeja:**
+  * Cabecera institucional azul marino: `CRM EDUCATIVO UNEXO`
+  * Título: `Gestión de Usuarios (CU1 – Nataly)`
+  * Resumen: `Total de usuarios registrados en el sistema: X`
+  * Tabla rectangular con bordes limpios y columnas:
+    `ID | NOMBRE COMPLETO | CORREO | ROL | ESTADO | ROUND-ROBIN | ÚLTIMO ACCESO`
+    * Fila 1: `1 | Nataly Martinez | admin@crm.bo | Administrador | Activo | No | ...`
+    * Fila 2: `2 | Coordinador Academico | coordinador@crm.bo | Coordinador | Activo | No | ...`
+    * Fila 3: `3 | Vendedor 1 | vendedor1@crm.bo | Vendedor | Activo | Sí | ...`
+* **Consulta SQL para Comprobar en PostgreSQL:**
+  ```sql
+  SELECT u.id_usuario, u.nombre_completo, u.correo, r.nombre AS rol, u.activo, u.participa_round_robin 
+  FROM usuarios u JOIN roles r ON u.id_rol = r.id_rol ORDER BY u.id_usuario ASC;
   ```
 
 ---
 
-## 🧪 3. Batería de Pruebas: 18 de 18 Pruebas Pasadas (100% de Éxito)
+### 🔹 PRUEBA 1.2: `BUSCARUSUARIO[...]` (Búsqueda por Correo y por ID)
 
-Ampliamos la clase de pruebas automatizadas en [**`INF513_P1/src/test/java/com/tecnoweb/grupo05sc/TestRunner.java`**](file:///home/nataly/Projects/TECNO/crm_correo/INF513_P1/src/test/java/com/tecnoweb/grupo05sc/TestRunner.java).
+#### Caso A: Búsqueda por Correo Institucional
+* **Remitente (`From:`):** `admin@crm.bo`
+* **Asunto a Enviar:**
+  ```text
+  BUSCARUSUARIO["vendedor1@crm.bo"]
+  ```
+* **Asunto de Respuesta:**
+  ```text
+  RE: [CRM-EDUCATIVO] Usuario Vendedor 1
+  ```
+* **Contenido HTML que Recibirás:**
+  * Tarjeta rectangular con título `Detalle de Usuario` e insignia `CONSULTA`.
+  * Ficha con los campos:
+    * **ID Usuario:** 3
+    * **Nombre Completo:** Vendedor 1
+    * **Correo Institucional:** `vendedor1@crm.bo`
+    * **Rol Asignado:** Vendedor
+    * **Estado Operativo:** Cuenta Activa
+    * **Participación en Round-Robin:** Activa
+    * **Fecha de Alta:** *(Fecha de creación)*
 
-### Para ejecutar las pruebas en tu máquina:
-```bash
-cd /home/nataly/Projects/TECNO/crm_correo/INF513_P1
-javac -encoding UTF-8 -cp "lib/postgresql.jar:." -d bin $(find src/main/java -name "*.java") src/test/java/com/tecnoweb/grupo05sc/TestRunner.java
-java -cp "lib/postgresql.jar:bin" com.tecnoweb.grupo05sc.TestRunner
-```
+#### Caso B: Búsqueda por ID Numérico
+* **Asunto a Enviar:**
+  ```text
+  BUSCARUSUARIO["1"]
+  ```
+* **Respuesta:** Ficha del Administrador del sistema.
 
-### Resultados verificados en la terminal:
-```text
-==========================================================================
-  INICIANDO BATERÍA DE PRUEBAS AUTOMATIZADAS – SISTEMA DE CORREOS        
-  INF513 TECNOLOGÍA WEB – GRUPO 05 SC                                     
-==========================================================================
-
-✔ TEST 1 PASÓ: REGISTRARPROSPECTO parseado con 5 parámetros y soporte de espacios.
-✔ TEST 2 PASÓ: LISTARUSUARIOS[] parseado sin parámetros correctamente.
-✔ TEST 3 PASÓ: Comando 'HELP' sin corchetes parseado como HELP[].
-✔ TEST 4 PASÓ: Captura error semántico para asunto vacío.
-✔ TEST 5 PASÓ: HELP[] ejecutado con catálogo interactivo HTML.
-✔ TEST 6 PASÓ: VERKANBAN[] y BOLSACOMUN[] ejecutados contra PostgreSQL con tablas HTML.
-✔ TEST 7 PASÓ: QUIENSOY autenticó correctamente al Administrador (Nataly).
-✔ TEST 8 PASÓ: CU1 LISTARUSUARIOS[] ejecutado por Administrador con tabla HTML.
-✔ TEST 9 PASÓ: CU1 Control de Acceso (RBAC) bloqueó correctamente a Vendedor.
-✔ TEST 10 PASÓ: CU1 Bloqueó correctamente petición de remitente no registrado.
-✔ TEST 11 PASÓ: CU1 CREARUSUARIO dio de alta al usuario con Round-Robin activo.
-✔ TEST 12 PASÓ: CU1 Bloqueó duplicidad de correo con error semántico explicativo.
-✔ TEST 13 PASÓ: CU1 BUSCARUSUARIO encontró y formateó la ficha del usuario.
-✔ TEST 14 PASÓ: CU1 MODIFICARUSUARIO actualizó datos y correo en PostgreSQL.
-✔ TEST 15 PASÓ: CU1 Regla de Oro demostrada -> Bloqueó el autobloqueo del Administrador.
-✔ TEST 16 PASÓ: CU1 TOGGLEUSUARIO alternó exitosamente de Activo a Inactivo y de regreso.
-✔ TEST 17 PASÓ: CU1 TOGGLEROUNDROBIN excluyó al vendedor de la asignación rotativa.
-✔ TEST 18 PASÓ: CU1 Validó regla de negocio -> Round-Robin solo aplica a Vendedores.
-
-==========================================================================
-  RESUMEN FINAL: 18 de 18 pruebas pasaron con éxito (100%).
-==========================================================================
-```
-
----
-
-## 📬 4. Cómo Probar el Caso de Uso 1 Enviando Correos Reales
-
-### 1. Inicia el Demonio Servidor en tu terminal:
-```bash
-cd /home/nataly/Projects/TECNO/crm_correo/INF513_P1
-java -cp "lib/postgresql.jar:bin" com.tecnoweb.grupo05sc.Main
-```
-
-### 2. Envía correos de prueba hacia `grupo05sc@tecnoweb.org.bo`:
-
-| Escenario que probarás | Correo desde el que debes enviar | Asunto (Subject) a escribir | Qué responderá el sistema por correo |
-| :--- | :---: | :--- | :--- |
-| **Listar todo el personal** | `admin@crm.bo` (o tu Gmail) | `LISTARUSUARIOS[]` | Tabla HTML con todos los usuarios registrados, sus roles y estados. |
-| **Buscar un usuario específico** | `admin@crm.bo` | `BUSCARUSUARIO["vendedor1@crm.bo"]` | Ficha detallada de Nicol Flores con su estado comercial. |
-| **Dar de alta un nuevo vendedor** | `admin@crm.bo` | `CREARUSUARIO["Roberto Carlos", "roberto@crm.bo", "claveSegura123", "Vendedor"]` | Tarjeta verde confirmando el alta y asignándole ID en la base de datos. |
-| **Probar la Protección Anti-Autobloqueo** | `admin@crm.bo` | `TOGGLEUSUARIO["1"]` | **Alerta roja de seguridad:** *"Operación denegada por seguridad: El Administrador no puede desactivar ni bloquear su propia cuenta."* |
-| **Desactivar/Reactivar otro usuario** | `admin@crm.bo` | `TOGGLEUSUARIO["3"]` | Confirma que la cuenta de Nicol Flores fue desactivada / reactivada. |
-| **Regular Round-Robin** | `admin@crm.bo` | `TOGGLEROUNDROBIN["3"]` | Confirma que el vendedor fue excluido o reincorporado a la rotación automática. |
-| **Probar Control de Acceso (RBAC)** | `vendedor1@crm.bo` | `LISTARUSUARIOS[]` | **Rechazo semántico:** *"Acceso denegado: Esta acción es exclusiva para usuarios con rol 'Administrador'."* |
+#### Caso C: Búsqueda de Usuario Inexistente (Manejo de Error)
+* **Asunto a Enviar:**
+  ```text
+  BUSCARUSUARIO["noexiste@crm.bo"]
+  ```
+* **Asunto de Respuesta:**
+  ```text
+  RE: [CRM-EDUCATIVO] Error en comando: BUSCARUSUARIO["noexiste@crm.bo"]
+  ```
+* **Contenido HTML que Recibirás:**
+  * Tarjeta roja formal:
+    ```text
+    [ERROR] No se encontró ningún usuario con el criterio de búsqueda: "noexiste@crm.bo".
+    Sugerencia: Verifique el correo o ID ingresado o envíe LISTARUSUARIOS[] para ver todos los usuarios.
+    ```
 
 ---
 
-## 🎯 5. Argumentario para la Defensa Oral (Ing. Evans Balcázar)
+### 🔹 PRUEBA 1.3: `CREARUSUARIO[...]` (Alta de Usuario y Hash SHA-256)
 
-* **¿Cómo garantizan que un vendedor no cree usuarios?**  
-  *"Ingeniero, cada orden entrante pasa primero por el `SecurityContext`. Se consulta la identidad biunívoca del remitente (`From:`) contra la tabla `usuarios` y `roles` en PostgreSQL. Si el usuario no tiene rol `Administrador`, el sistema rechaza la ejecución y devuelve un correo semántico explicando que la acción está restringida."*
-* **¿Qué sucede si un Administrador intenta desactivarse a sí mismo?**  
-  *"En la clase `UsuarioService`, método `toggleUsuario`, implementamos una validación estricta: `if (idUsuario == auth.getIdUsuario())`. Si el ID coincide con el usuario autenticado, la transacción se aborta de inmediato con una alerta de seguridad, garantizando que el sistema nunca quede sin un administrador activo."*
-* **¿Cómo almacenan las contraseñas sin librerías externas?**  
-  *"Utilizamos `java.security.MessageDigest` de la biblioteca estándar de Java para generar un hash criptográfico SHA-256 en formato hexadecimal. Esto asegura que ninguna contraseña se almacene en texto plano en la base de datos sin depender de frameworks externos."*
-* **¿Por qué `PreparedStatement` previene inyección SQL?**  
-  *"Porque separa la compilación de la consulta de los datos de entrada. PostgreSQL analiza la estructura del SQL primero y asigna los comodines `?` como valores literales puros, neutralizando cualquier intento de inyectar comillas como `' OR 1=1 --`."*
+#### Caso A: Registro Exitoso de un Nuevo Vendedor
+* **Remitente (`From:`):** `admin@crm.bo`
+* **Asunto a Enviar:**
+  ```text
+  CREARUSUARIO["Mariana Suarez", "mariana.suarez@crm.bo", "PasswordSeguro2026*", "Vendedor"]
+  ```
+* **Asunto de Respuesta:**
+  ```text
+  RE: [CRM-EDUCATIVO] Alta de Usuario Exitosa
+  ```
+* **Contenido HTML que Recibirás:**
+  * Tarjeta verde formal con etiqueta `[EXITO]`:
+    ```text
+    [EXITO] Operación Ejecutada Correctamente
+    La cuenta de usuario ha sido persistida en PostgreSQL.
+
+    • ID Asignado: (Nuevo ID autogenerado, ej. 12)
+    • Nombre Completo: Mariana Suarez
+    • Correo Registrado: mariana.suarez@crm.bo
+    • Rol: Vendedor
+    • Estado Inicial: Activo
+    • Round-Robin: Habilitado (Vendedor)
+    ```
+* **Consulta SQL para Comprobar en PostgreSQL:**
+  ```sql
+  SELECT id_usuario, nombre_completo, correo, password_hash, id_rol, activo, participa_round_robin 
+  FROM usuarios WHERE correo = 'mariana.suarez@crm.bo';
+  ```
+  *(Observa que `password_hash` es un hash hexadecimal de 64 caracteres SHA-256, garantizando seguridad criptográfica)*.
+
+#### Caso B: Rechazo por Correo Duplicado
+* **Asunto a Enviar:**
+  ```text
+  CREARUSUARIO["Mariana Clon", "mariana.suarez@crm.bo", "123456", "Vendedor"]
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [ERROR] El correo institucional 'mariana.suarez@crm.bo' ya se encuentra registrado para otra cuenta.
+  Sugerencia: Utilice una dirección de correo diferente o verifique el listado existente con LISTARUSUARIOS[].
+  ```
+
+#### Caso C: Rechazo por Formato de Correo Inválido
+* **Asunto a Enviar:**
+  ```text
+  CREARUSUARIO["Carlos", "carlos_sin_arroba", "pass123", "Vendedor"]
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [ERROR] El formato del correo electrónico 'carlos_sin_arroba' es inválido.
+  Sugerencia: Ingrese un correo válido con formato usuario@dominio.com
+  ```
+
+#### Caso D: Rechazo por Rol Desconocido
+* **Asunto a Enviar:**
+  ```text
+  CREARUSUARIO["Pedro", "pedro@crm.bo", "pass123", "GerenteGeneral"]
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [ERROR] El rol 'GerenteGeneral' no existe en el sistema.
+  Sugerencia: Los roles institucionales permitidos son: 'Administrador', 'Coordinador', 'Vendedor'.
+  ```
+
+---
+
+### 🔹 PRUEBA 1.4: `MODIFICARUSUARIO[...]` (Actualización de Datos)
+* **Remitente (`From:`):** `admin@crm.bo`
+* **Asunto a Enviar:** *(Reemplazar el primer parámetro con el ID del usuario creado)*
+  ```text
+  MODIFICARUSUARIO["12", "Mariana Suarez de Perez", "mariana.modificada@crm.bo", "Vendedor"]
+  ```
+* **Asunto de Respuesta:**
+  ```text
+  RE: [CRM-EDUCATIVO] Modificación de Usuario #12
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [EXITO] Operación Ejecutada Correctamente
+  Los datos institucionales han sido actualizados satisfactoriamente.
+
+  • ID Usuario: 12
+  • Nuevo Nombre: Mariana Suarez de Perez
+  • Nuevo Correo: mariana.modificada@crm.bo
+  • Nuevo Rol: Vendedor
+  ```
+* **Consulta SQL para Comprobar en PostgreSQL:**
+  ```sql
+  SELECT id_usuario, nombre_completo, correo, id_rol, updated_at FROM usuarios WHERE id_usuario = 12;
+  ```
+
+---
+
+### 🔹 PRUEBA 1.5: `TOGGLEUSUARIO[...]` (Activar/Desactivar y Regla de Oro)
+
+#### Caso A: Demostración de la Regla de Oro Anti-Autobloqueo (¡Vital para el Docente!)
+* **Remitente (`From:`):** `admin@crm.bo` *(cuyo `id_usuario` es `1`)*.
+* **Asunto a Enviar:**
+  ```text
+  TOGGLEUSUARIO["1"]
+  ```
+* **Asunto de Respuesta:**
+  ```text
+  RE: [CRM-EDUCATIVO] Error en comando: TOGGLEUSUARIO["1"]
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [ERROR] Operación denegada por seguridad: El Administrador no puede desactivar ni bloquear su propia cuenta.
+  Sugerencia: Para dar de baja esta cuenta administrativa, otro usuario con rol Administrador debe ejecutar la acción.
+  ```
+* **Verificación en PostgreSQL:**
+  ```sql
+  SELECT id_usuario, correo, activo FROM usuarios WHERE id_usuario = 1;
+  ```
+  *(El valor de `activo` permanece intacto en `true`)*.
+
+#### Caso B: Desactivar a Otro Usuario
+* **Asunto a Enviar:**
+  ```text
+  TOGGLEUSUARIO["12"]
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [EXITO] Operación Ejecutada Correctamente
+  Se alternó con éxito la disponibilidad de la cuenta.
+
+  • Usuario: Mariana Suarez (mariana.modificada@crm.bo)
+  • Rol: Vendedor
+  • Nuevo Estado: DESACTIVADA (El acceso al sistema ha sido revocado)
+  ```
+* **Verificación en PostgreSQL:**
+  ```sql
+  SELECT id_usuario, activo FROM usuarios WHERE id_usuario = 12;
+  -- Resultado: activo = false
+  ```
+
+#### Caso C: Reactivar al Usuario
+* **Asunto a Enviar:**
+  ```text
+  TOGGLEUSUARIO["12"]
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [EXITO] Operación Ejecutada Correctamente
+  • Nuevo Estado: ACTIVADA (El usuario ahora puede acceder al sistema)
+  ```
+* **Verificación en PostgreSQL:**
+  ```sql
+  SELECT id_usuario, activo FROM usuarios WHERE id_usuario = 12;
+  -- Resultado: activo = true
+  ```
+
+---
+
+### 🔹 PRUEBA 1.6: `TOGGLEROUNDROBIN[...]` (Regulación de Reparto Comercial)
+
+#### Caso A: Excluir a un Vendedor de la Rotación Automática
+* **Remitente (`From:`):** `admin@crm.bo`
+* **Asunto a Enviar:**
+  ```text
+  TOGGLEROUNDROBIN["3"]
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [EXITO] Operación Ejecutada Correctamente
+  Se actualizó la participación en la bolsa comercial.
+
+  • Vendedor: Vendedor 1
+  • Correo: vendedor1@crm.bo
+  • Participación Round-Robin: EXCLUIDO (No recibirá prospectos automáticos hasta nuevo aviso)
+  ```
+* **Verificación en PostgreSQL:**
+  ```sql
+  SELECT id_usuario, participa_round_robin FROM usuarios WHERE id_usuario = 3;
+  -- Resultado: participa_round_robin = false
+  ```
+
+#### Caso B: Reincorporar al Vendedor
+* **Asunto a Enviar:**
+  ```text
+  TOGGLEROUNDROBIN["3"]
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [EXITO] Operación Ejecutada Correctamente
+  • Participación Round-Robin: HABILITADO (Recibirá nuevos prospectos automáticamente en la rotación)
+  ```
+
+#### Caso C: Intento de Aplicar Round-Robin a un No-Vendedor (Validación de Negocio)
+* **Asunto a Enviar:** *(El usuario #2 es Coordinador)*
+  ```text
+  TOGGLEROUNDROBIN["2"]
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [ERROR] El usuario #2 (Coordinador Academico) tiene rol 'Coordinador'.
+  Sugerencia: La asignación automática Round-Robin solo es aplicable a usuarios con rol 'Vendedor'.
+  ```
+
+---
+
+### 🔹 PRUEBA 1.7: Control de Acceso Basado en Roles (RBAC)
+
+#### Caso A: Vendedor Intenta Listar Usuarios
+* **Remitente (`From:`):** `vendedor1@crm.bo`
+* **Asunto a Enviar:**
+  ```text
+  LISTARUSUARIOS[]
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [ERROR] Acceso denegado: Esta acción es exclusiva para usuarios con rol 'Administrador'.
+  Sugerencia: Su rol actual es 'Vendedor'. Envíe HELP[] para ver los comandos permitidos para su rol.
+  ```
+
+#### Caso B: Remitente Externo Desconocido Intenta Comandos Administrativos
+* **Remitente (`From:`):** `hacker@externo.com`
+* **Asunto a Enviar:**
+  ```text
+  CREARUSUARIO["Infiltrado", "infiltrado@crm.bo", "123", "Administrador"]
+  ```
+* **Contenido HTML que Recibirás:**
+  ```text
+  [ERROR] Acceso denegado: El correo remitente no corresponde a un usuario registrado en el sistema.
+  Sugerencia: Para solicitar una cuenta institucional, comuníquese con el administrador del CRM o envíe HELP[] para asistencia.
+  ```
+
+---
+
+## 🎯 Resumen de Comprobaciones para la Defensa
+
+| Comando Probado | Asunto Enviado | Código de Estado | Resultado Visible en Correo | Comprobación en BD |
+| :--- | :--- | :---: | :--- | :--- |
+| `LISTARUSUARIOS` | `LISTARUSUARIOS[]` | `250 OK` | Tabla HTML con usuarios y roles | `SELECT * FROM usuarios;` |
+| `BUSCARUSUARIO` | `BUSCARUSUARIO["vendedor1@crm.bo"]` | `250 OK` | Ficha formal del usuario | `SELECT * FROM usuarios WHERE correo = ...;` |
+| `CREARUSUARIO` | `CREARUSUARIO["Nombre","mail","pass","rol"]` | `250 OK` | `[EXITO]` con ID asignado | `password_hash` en SHA-256 |
+| `MODIFICARUSUARIO`| `MODIFICARUSUARIO["id","nom","mail","rol"]` | `250 OK` | `[EXITO]` con datos actualizados | `updated_at` actualizado |
+| `TOGGLEUSUARIO` | `TOGGLEUSUARIO["1"]` *(mismo admin)* | `250 OK` | `[ERROR]` Anti-Autobloqueo | `activo` se mantiene en `true` |
+| `TOGGLEUSUARIO` | `TOGGLEUSUARIO["3"]` *(otro usuario)* | `250 OK` | `[EXITO]` Cambia Activo/Inactivo | `activo` alterna `true/false` |
+| `TOGGLEROUNDROBIN`| `TOGGLEROUNDROBIN["3"]` | `250 OK` | `[EXITO]` Habilitado/Excluido | `participa_round_robin` alterna |
+| `TOGGLEROUNDROBIN`| `TOGGLEROUNDROBIN["2"]` *(no vendedor)* | `250 OK` | `[ERROR]` Solo para Vendedores | Sin cambios en BD |

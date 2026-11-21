@@ -352,9 +352,161 @@ public class TestRunner {
             System.err.println("❌ TEST 18 EXCEPCIÓN: " + e.getMessage());
         }
 
+        // =============================================================
+        // PRUEBAS ESPECÍFICAS DE CU2: CAPTACIÓN Y OFERTA (JAEL)
+        // =============================================================
+
+        limpiarLeadPrueba("mario.test@gmail.com");
+        long idLeadCreado = -1;
+
+        // -------------------------------------------------------------
+        // TEST 19: CU2 - REGISTRARPROSPECTO crea lead en Bolsa Común (etapa 1)
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            String cmdReg = "REGISTRARPROSPECTO[\"Mario Test\", \"70011223\", \"mario.test@gmail.com\", \"Facebook\", \"Ingeniería de Sistemas\"]";
+            CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdReg);
+            if (result.isSuccess() && result.getHtmlBody().contains("Captacion de Prospecto (CU2 - Jael)") && result.getHtmlBody().contains("Mario Test")) {
+                com.tecnoweb.grupo05sc.dao.LeadDao leadDao = new com.tecnoweb.grupo05sc.dao.LeadDao();
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement("SELECT id_lead, id_etapa, id_vendedor FROM leads WHERE correo = 'mario.test@gmail.com'")) {
+                    java.sql.ResultSet rs = ps.executeQuery();
+                    if (rs.next()) {
+                        idLeadCreado = rs.getLong("id_lead");
+                        long etapa = rs.getLong("id_etapa");
+                        Object vend = rs.getObject("id_vendedor");
+                        if (etapa == 1 && vend == null) {
+                            System.out.println("✔ TEST 19 PASÓ: CU2 REGISTRARPROSPECTO registró al lead #" + idLeadCreado + " en etapa 1 y Bolsa Común.");
+                            testsPassed++;
+                        } else {
+                            System.err.println("❌ TEST 19 FALLÓ: Lead con etapa o vendedor incorrecto: etapa=" + etapa + ", vend=" + vend);
+                        }
+                    } else {
+                        System.err.println("❌ TEST 19 FALLÓ: Lead no encontrado en BD.");
+                    }
+                }
+            } else {
+                System.err.println("❌ TEST 19 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 19 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 20: CU2 - REGISTRARPROSPECTO rechaza parámetros insuficientes
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("admin@crm.bo", "REGISTRARPROSPECTO[\"SoloNombre\"]");
+            if (!result.isSuccess() && result.getHtmlBody().contains("Parametros insuficientes")) {
+                System.out.println("✔ TEST 20 PASÓ: CU2 REGISTRARPROSPECTO rechazó petición con datos de contacto incompletos.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 20 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 20 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 21: CU2 - VINCULARINTERES vincula programa académico a lead
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadCreado > 0) {
+                String cmdVinc = "VINCULARINTERES[\"" + idLeadCreado + "\", \"PROGRAMA\", \"101\", \"Diplomado en Ciberseguridad Defensiva\"]";
+                CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdVinc);
+                if (result.isSuccess() && result.getHtmlBody().contains("Interes Academico Vinculado") && result.getHtmlBody().contains("Diplomado en Ciberseguridad")) {
+                    System.out.println("✔ TEST 21 PASÓ: CU2 VINCULARINTERES asoció exitosamente programa al lead #" + idLeadCreado + ".");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 21 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 21 OMITIDO: Falta idLeadCreado.");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 21 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 22: CU2 - VINCULARINTERES rechaza tipo inválido (ni PROGRAMA ni MODULO)
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadCreado > 0) {
+                String cmdVinc = "VINCULARINTERES[\"" + idLeadCreado + "\", \"SEMINARIO\", \"101\", \"Seminario Invalido\"]";
+                CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdVinc);
+                if (!result.isSuccess() && result.getHtmlBody().contains("invalido")) {
+                    System.out.println("✔ TEST 22 PASÓ: CU2 VINCULARINTERES validó restricción de tipo ('PROGRAMA' o 'MODULO').");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 22 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 22 OMITIDO: Falta idLeadCreado.");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 22 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 23: CU2 - LISTARINTERESES lista los cursos del prospecto
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadCreado > 0) {
+                String cmdList = "LISTARINTERESES[\"" + idLeadCreado + "\"]";
+                CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdList);
+                if (result.isSuccess() && result.getHtmlBody().contains("Diplomado en Ciberseguridad")) {
+                    System.out.println("✔ TEST 23 PASÓ: CU2 LISTARINTERESES generó tabla HTML con los cursos del prospecto.");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 23 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 23 OMITIDO: Falta idLeadCreado.");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 23 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 24: CU2 - LISTARORIGENES lista los canales de captación
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("admin@crm.bo", "LISTARORIGENES[]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Facebook") && result.getHtmlBody().contains("WhatsApp")) {
+                System.out.println("✔ TEST 24 PASÓ: CU2 LISTARORIGENES consultó el catálogo de canales de captación.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 24 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 24 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 25: CU2 - LISTARPROFESIONES lista el catálogo de profesiones
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("admin@crm.bo", "LISTARPROFESIONES[]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Ingeniería de Sistemas") && result.getHtmlBody().contains("Derecho")) {
+                System.out.println("✔ TEST 25 PASÓ: CU2 LISTARPROFESIONES consultó el catálogo de áreas y profesiones.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 25 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 25 EXCEPCIÓN: " + e.getMessage());
+        }
+
         // Limpieza final de prueba
         limpiarUsuarioPrueba("mariana.suarez@crm.bo");
         limpiarUsuarioPrueba("mariana.modificada@crm.bo");
+        limpiarLeadPrueba("mario.test@gmail.com");
 
         System.out.println("\n==========================================================================");
         System.out.println("  RESUMEN FINAL: " + testsPassed + " de " + totalTests + " pruebas pasaron con éxito (" + (testsPassed * 100 / totalTests) + "%).");
@@ -364,6 +516,14 @@ public class TestRunner {
     private static void limpiarUsuarioPrueba(String correo) {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM usuarios WHERE LOWER(correo) = LOWER(?)")) {
+            ps.setString(1, correo);
+            ps.executeUpdate();
+        } catch (Exception ignored) {}
+    }
+
+    private static void limpiarLeadPrueba(String correo) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM leads WHERE LOWER(correo) = LOWER(?)")) {
             ps.setString(1, correo);
             ps.executeUpdate();
         } catch (Exception ignored) {}

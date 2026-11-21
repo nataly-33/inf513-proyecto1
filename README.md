@@ -1,11 +1,11 @@
-# 🎓 CRM Educativo UNEXO – Sistema Automatizado vía Correo Electrónico
+# CRM Educativo UNEXO – Sistema Automatizado vía Correo Electrónico
 ### INF513 Tecnología Web | 1er Parcial | Grupo 05 SC
 ### Universidad Autónoma Gabriel René Moreno (FICCT - UAGRM)
 **Docente:** Msc. Ing. Evans Balcázar Veizaga
 
 ---
 
-## 👥 Equipo de Desarrollo y Responsabilidades
+## Equipo de Desarrollo y Responsabilidades
 
 | Integrante | Rol | Casos de Uso Asignados |
 | :--- | :---: | :--- |
@@ -15,7 +15,7 @@
 
 ---
 
-## 🏗️ Arquitectura Técnica de Bajo Nivel
+## Arquitectura Técnica de Bajo Nivel
 
 El sistema implementa un demonio de servidor en Java SE puro que interactúa mediante **Sockets TCP puros** (sin frameworks ni librerías de alto nivel como `javax.mail`):
 
@@ -65,7 +65,7 @@ El sistema implementa un demonio de servidor en Java SE puro que interactúa med
 
 ---
 
-## 🖥️ Estrategia de Monitoreo en Doble Terminal
+## Estrategia de Monitoreo en Doble Terminal
 
 Para evitar la saturación de la consola durante la defensa y al mismo tiempo disponer de la evidencia de sockets de bajo nivel requerida por el docente:
 
@@ -79,7 +79,7 @@ Para evitar la saturación de la consola durante la defensa y al mismo tiempo di
 
 ---
 
-## 📁 Estructura del Repositorio
+## Estructura del Repositorio
 
 ```text
 INF513_P1/
@@ -127,7 +127,7 @@ INF513_P1/
 
 ---
 
-## ⚙️ Configuración y Requisitos
+## Configuración y Requisitos
 
 1. **Java:** Java SE Development Kit (JDK) 8 o superior.
 2. **PostgreSQL:** PostgreSQL 14+ (Local o Servidor Facultad `db.tecnoweb.org.bo`).
@@ -173,7 +173,7 @@ java -cp "lib/postgresql.jar:bin" com.tecnoweb.grupo05sc.TestRunner
 
 ---
 
-## 📚 Documentación para la Defensa
+## Documentación para la Defensa
 * [Guion Oficial de Defensa en 15 Minutos](docs/FLUJO_DEFENSA_15MIN.md)
 * [Anexo Técnico: Catálogo de 42 Comandos Oficiales](docs/ANEXO_CATALOGO_COMANDOS_OFICIALES.md)
 * [Guía de Contingencia ante Fallas y Modificaciones en Vivo](docs/GUIA_CONTRA_ERRORES_Y_DEFENSA_ORAL.md)
