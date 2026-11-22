@@ -147,6 +147,20 @@ public final class CommandDispatcher {
             return CommandResult.error(respSubject, errorHtml);
 
         } catch (Exception e) {
+            boolean esErrorBD = (e instanceof java.sql.SQLException) ||
+                                (e.getCause() instanceof java.sql.SQLException) ||
+                                (e.getMessage() != null && (e.getMessage().contains("Connection") || e.getMessage().contains("refused") || e.getMessage().contains("PostgreSQL")));
+
+            if (esErrorBD) {
+                System.err.println(">>> [ALERTA DB] Fallo de comunicacion con PostgreSQL: " + e.getMessage());
+                String respSubject = Config.SUBJECT_PREFIX + " Servicio no disponible temporalmente";
+                String errorHtml = HtmlTemplate.errorCard(
+                    "El servidor de base de datos PostgreSQL no se encuentra disponible temporalmente.",
+                    "El servicio se restablecera de forma automatica en cuanto la base de datos vuelva a estar en linea. El servidor demonio continua activo sin necesidad de reiniciarlo."
+                );
+                return CommandResult.error(respSubject, errorHtml);
+            }
+
             System.err.println("[ERROR NO CONTROLADO] " + e.getMessage());
             e.printStackTrace();
             String respSubject = Config.SUBJECT_PREFIX + " Error de servidor";

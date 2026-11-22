@@ -40,6 +40,7 @@ public class Main {
         } catch (Exception e) {
             System.err.println(">>> [ALERTA DB] No se pudo conectar a PostgreSQL: " + e.getMessage());
             System.err.println("    Asegurese de que el servidor PostgreSQL este corriendo en " + Config.DB_HOST + ":" + Config.DB_PORT);
+            System.err.println("    [RECONEXION AUTOMATICA ACTIVA] El demonio iniciara normalmente y se reconectara en cuanto la base de datos este disponible.");
         }
 
         POP3Listener pop3 = new POP3Listener();

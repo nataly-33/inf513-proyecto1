@@ -1,179 +1,281 @@
-# ⏱️ GUÍA OFICIAL: FLUJO COMPLETO DE DEFENSA EN 15 MINUTOS
+# ⏱️ GUÍA RÁPIDA DE DEFENSA EN 15 MINUTOS (GUION OFICIAL)
 ### INF513 - Tecnología Web | Grupo 05 SC | Docente: Msc. Ing. Evans Balcázar Veizaga
-### Sistema Automatizado vía Correo Electrónico – CRM Educativo UNEXO
+### Sistema Transaccional por Correo Electrónico – CRM Educativo UNEXO
 
 ---
 
-## 🎯 1. Estrategia y Distribución del Tiempo en la Mesa de Examen
+## 🎯 1. Estrategia Maestra para la Mesa de Examen (Sin Fallas ni Fricción)
 
-El Ing. Evans Balcázar evalúa de forma sumamente práctica, cronometrada y directa. El tiempo total asignado por grupo es de aproximadamente **20 minutos**:
+> [!IMPORTANT]
+> **La Clave del Éxito con el Ing. Evans Balcázar:**
+> 1. **El docente evalúa enviando correos reales desde su propio Gmail o celular.**
+> 2. **Paso 0:** Le pedimos que mande `HELP[]`. Con eso capturamos su dirección exacta en los logs de consola de Java (`S : From: <correo_del_docente>`).
+> 3. **Paso 1 (Estratégico):** Inmediatamente, desde el correo de la Administradora (`nataly.vane.mm@gmail.com`), le creamos una cuenta de **Administrador**:
+>    `CREARUSUARIO["Ing. Evans Balcazar", "<correo_del_docente>", "12345678", "Administrador"]`
+> 4. **Ventaja Total:** Al tener rol `Administrador`, **el docente podrá ejecutar los 10 pasos seguidos** (registrar leads, ver catálogos, asignar vendedores, avanzar etapas, registrar comprobantes, aprobar pagos y matricular) **sin ningún error de permisos ni bloqueos de seguridad**. El flujo corre limpio, rápido y en menos de 10 minutos.
 
-| Minuto | Actividad | Objetivo de Evaluación | Responsable |
+---
+
+## ⏰ 2. Cronograma de Tiempo (Mesa de 15 a 20 Minutos)
+
+| Tiempo | Fase | Objetivo | Responsable |
 | :---: | :--- | :--- | :---: |
-| **0 - 2** | **Revisión de Base de Datos y Documento** | El docente verifica que las tablas desplegadas en PostgreSQL coincidan con el diagrama del documento. | Todo el equipo |
-| **2 - 5** | **Pitch Puntual (3 minutos)** | Explicar qué es la empresa (UNEXO - Centro de Capacitación y Postgrados), a qué se dedica y cómo este sistema automatiza el ciclo comercial vía email. | Nataly |
-| **5 - 17** | **Demostración en Vivo vía Email (12 min)** | El docente envía correos desde su cuenta personal de Gmail hacia `grupo05sc@tecnoweb.org.bo` ejecutando el flujo comercial completo de punta a punta. | Equipo / Docente |
-| **17 - 20** | **Preguntas y Modificación en Vivo** | Preguntas capciosas de bajo nivel o solicitud de ajuste rápido en código. | Todo el equipo |
+| **Min 0 - 2** | **Base de Datos** | Mostrar tablas en terminal PostgreSQL (`psql -d crm_educativo`, `\dt`). | Todo el equipo |
+| **Min 2 - 4** | **Pitch Ejecutivo (2 min)** | Explicar qué es UNEXO (Postgrados y Capacitación), arquitectura Socket puro (POP3/SMTP) y automatización del embudo comercial. | Nataly |
+| **Min 4 - 13** | **Demostración en Vivo** | Ejecución de la cadena de 10 comandos en vivo con el correo del docente. | Docente / Equipo |
+| **Min 13 - 15** | **Verificación Final y Cierre** | Ver el prospecto en Etapa 5 (`LEADSETAPA[5]`) y responder preguntas técnicas de bajo nivel. | Todo el equipo |
 
 ---
 
-## 🚀 2. El Flujo de Prueba Comercial Oficial (De Prospecto a Alumno Matriculado)
+## 📋 3. Cadena de Comandos Oficial: De Prospecto a Alumno Matriculado
 
-> 💡 **La Regla de Oro del Docente:**  
-> Cuando el docente pregunte: *«¿Cuál es su flujo de prueba? ¿Con qué comando comenzamos y cuál es el siguiente?»*, respondan con seguridad:
-> 
-> *"Ingeniero, nuestro flujo representa el ciclo comercial completo de la institución: El sistema arranca con la verificación de comandos e identidad, luego un nuevo interesado se registra como prospecto y cae en la Bolsa Común, se le asigna un vendedor, avanza por el embudo Kanban comercial, el prospecto realiza su pago bancario, el administrador aprueba el comprobante y formaliza su matrícula emitiendo su constancia académica, impactando finalmente en los reportes estadísticos en tiempo real."*
+A continuación se detalla la secuencia exacta. Tener esta tabla abierta en pantalla o impresa durante la defensa:
+
+```mermaid
+flowchart LR
+    A["Paso 0: HELP[]"] --> B["Paso 1: CREARUSUARIO (Admin)"]
+    B --> C["Paso 2: REGISTRARPROSPECTO"]
+    C --> D["Paso 3: VINCULARINTERES"]
+    D --> E["Paso 4: ASIGNARMANUAL"]
+    E --> F["Paso 5: MOVERETAPA (4)"]
+    F --> G["Paso 6: REGISTRARCOMPROBANTE"]
+    G --> H["Paso 7: APROBARPAGO"]
+    H --> I["Paso 8: COMPLETARDATOSALUMNO"]
+    I --> J["Paso 9: CONVERTIRAMATRICULA"]
+    J --> K["Paso 10: LEADSETAPA[5]"]
+```
 
 ---
 
-### 📋 GUION DETALLADO PASO A PASO (COMANDO POR COMANDO)
-
-#### PASO 0: Inicio y Verificación de Comandos (Minuto 5)
-* **Actor / Remitente:** El Docente (`docente@uagrm.edu.bo` o su Gmail)
-* **Asunto (Subject):**
+### PASO 0: Docente envía `HELP[]` (Captura de Correo)
+* **¿Quién lo envía?:** El Ingeniero Evans Balcázar desde su correo personal.
+* **Asunto del Correo:**
   ```text
   HELP[]
   ```
-* **Acción en el Sistema:** El `CommandParser` interpreta el comando general y genera el catálogo de 42 comandos institucionales clasificados por los 8 Casos de Uso.
-* **Respuesta Esperada en Bandeja:** Correo con tabla formal rectangular y paleta UNEXO conteniendo la lista de comandos.
-* **Comprobación en BD:** Consulta en memoria / metadata.
+* **Qué decirle al Ingeniero:**  
+  *«Ingeniero, por favor envíe un correo a grupo05sc@tecnoweb.org.bo con el asunto HELP[] para que el servidor le responda con el catálogo general de comandos interactivos.»*
+* **Qué pasa en pantalla / logs:**  
+  El demonio Java imprime:  
+  `S : From: evansbv@gmail.com` *(o el correo que use el docente)*.  
+  El docente recibe en segundos una tabla formal con los 42 comandos institucionales clasificados por Casos de Uso.
 
 ---
 
-#### PASO 1: Identificación y Control de Acceso (Minuto 6)
-* **Actor / Remitente:** Cuenta Administrativa o Docente (`admin@crm.bo` o correo registrado)
-* **Asunto (Subject):**
+### PASO 1: Nataly da de alta al Ingeniero como Administrador
+* **¿Quién lo envía?:** Nataly desde `nataly.vane.mm@gmail.com`.
+* **Asunto del Correo:**
   ```text
-  QUIENSOY[]
+  CREARUSUARIO["Ing. Evans Balcazar", "evansbv@gmail.com", "12345678", "Administrador"]
   ```
-* **Acción en el Sistema:** Consulta la tabla `usuarios` y `roles` vinculando el `From:` del remitente.
-* **Respuesta Esperada en Bandeja:** Ficha del usuario con: Nombre completo, Correo, Rol (`Administrador`), Estado (`[ACTIVO]`) y Participación en Round-Robin.
+  *(Reemplazar `evansbv@gmail.com` por el correo real que capturamos en el Paso 0).*
+* **Qué decirle al Ingeniero:**  
+  *«Ingeniero, ya le hemos creado su cuenta oficial con privilegios de Administrador. Si desea verificarlo, puede enviar `QUIENSOY[]` y verá su ficha activa con sus credenciales.»*
+* **Respuesta que recibe Nataly y verificación:**  
+  `[EXITO] Usuario Creado Exitosamente: Ing. Evans Balcazar (Administrador).`
 
 ---
 
-#### PASO 2: CU1 - Verificación de Personal y Vendedores (Minuto 7)
-* **Actor / Remitente:** Administrador (`admin@crm.bo`)
-* **Asunto (Subject):**
+### PASO 2: El Docente registra un nuevo prospecto
+* **¿Quién lo envía?:** El Docente desde su cuenta de correo.
+* **Asunto del Correo:**
   ```text
-  LISTARUSUARIOS[]
+  REGISTRARPROSPECTO["Carlos Villagomez", "70012345", "carlos.v@gmail.com", "Facebook", "Ingeniería de Sistemas / Software"]
   ```
-* **Acción en el Sistema:** `UsuarioDao.listarTodos()` ejecuta consulta parametrizada a PostgreSQL.
-* **Respuesta Esperada en Bandeja:** Tabla formal con ID, Nombre, Rol, Estado y Vendedores disponibles para asignación comercial.
-* **Prueba de Seguridad Rápida (Si el docente la pide):**
-  * Asunto: `TOGGLEUSUARIO["1"]`
-  * Respuesta: `[ERROR] Operación denegada por seguridad: El Administrador no puede desactivar ni bloquear su propia cuenta.`
+* **Qué decirle al Ingeniero:**  
+  *«Ingeniero, ahora registre a un nuevo interesado en postgrado. Los parámetros son: Nombre, Teléfono, Correo, Origen de captación y Profesión.»*
+* **Tip de Respaldo (Si pregunta qué orígenes existen):**  
+  *«Puede consultar los canales válidos enviando `LISTARORIGENES[]`. Los admitidos son Facebook, Google Ads, Sitio Web, Referido, TikTok o WhatsApp.»*
+* **Respuesta que recibe el Docente:**  
+  `[EXITO] Captación de Prospecto: Carlos Villagomez registrado satisfactoriamente con ID #15. Estado: Bolsa Común (Pendiente de Vendedor).`  
+  *(Anotar el ID del lead generado, por ejemplo `#15`)*.
 
 ---
 
-#### PASO 3: CU2 - Captación de Nuevo Prospecto Interesado (Minuto 8)
-* **Actor / Remitente:** Cualquier remitente / Docente / Web (`docente@uagrm.edu.bo`)
-* **Asunto (Subject):**
+### PASO 3: El Docente vincula el interés académico al prospecto
+* **¿Quién lo envía?:** El Docente.
+* **Tip previo (Si el docente no sabe qué oferta hay):**  
+  *«Ingeniero, si desea ver nuestros diplomados y maestrías disponibles, envíe `LISTAROFERTA[]` y le listará la oferta oficial con códigos y aranceles.»*
+* **Asunto del Correo:**
   ```text
-  REGISTRARPROSPECTO["Mario Becerra","70011223","mario.becerra@gmail.com","Facebook Ads","Ingeniero de Sistemas"]
+  VINCULARINTERES["15", "PROGRAMA", "101", "Diplomado en Ciberseguridad Defensiva"]
   ```
-* **Acción en el Sistema:** Inserta en la tabla `leads` con `id_etapa = 1` (Nuevo), `id_origen = 1` (Facebook Ads) y `id_vendedor = NULL`.
-* **Respuesta Esperada en Bandeja:** `[EXITO] Prospecto Mario Becerra registrado satisfactoriamente con ID #15. Etapa: Nuevo. Ubicación: Bolsa Común.`
-* **Verificación en PostgreSQL:**
-  ```sql
-  SELECT id_lead, nombre, telefono, id_etapa, id_vendedor FROM leads WHERE correo = 'mario.becerra@gmail.com';
-  ```
+  *(Reemplazar `15` por el ID del prospecto creado en el Paso 2).*
+* **Respuesta que recibe el Docente:**  
+  `[EXITO] Interés Académico Vinculado: Programa PROG-101 (Diplomado en Ciberseguridad Defensiva) asociado al prospecto #15.`
 
 ---
 
-#### PASO 4: CU3 - Ver Bolsa Común y Asignación a Vendedor (Minuto 9)
-* **Actor / Remitente:** Coordinador o Administrador (`admin@crm.bo`)
-* **Asunto (Subject):**
+### PASO 4: El Docente asigna el prospecto a un Vendedor
+* **¿Quién lo envía?:** El Docente.
+* **Tip previo (Si el docente no sabe qué vendedores existen):**  
+  *«Ingeniero, puede enviar `LISTARUSUARIOS[]` para ver a todo nuestro equipo comercial disponible.»*  
+  *(Allí verá a Vanessa Martínez con ID #3 y a Nicol Flores con ID #4 con rol Vendedor)*.
+* **Asunto del Correo:**
   ```text
-  BOLSACOMUN[]
+  ASIGNARMANUAL["15", "3"]
   ```
-* **Respuesta:** Muestra la tabla de prospectos sin asignar, donde figura Mario Becerra con `id_vendedor = NULL`.
-* **Siguiente Asunto (Asignación Directa):**
-  ```text
-  ASIGNARMANUAL["15","3"]
-  ```
-  *(Asigna el prospecto #15 al vendedor #3: Vendedor 1)*.
-* **Acción en el Sistema:** Actualiza `leads.id_vendedor = 3`, registra auditoría en `asignaciones_lead` y añade hito en `bitacora`.
-* **Respuesta:** `[EXITO] Prospecto #15 asignado exitosamente al vendedor Vendedor 1.`
+  *(Asigna el lead #15 al vendedor #3: Vanessa Martínez)*.
+* **Respuesta que recibe el Docente:**  
+  `[EXITO] Asignación Manual Exitosa: El prospecto #15 ha sido asignado a la cartera comercial de Vanessa Martínez con registro en auditoría.`
 
 ---
 
-#### PASO 5: CU4 - Gestión del Embudo Comercial Kanban (Minuto 11)
-* **Actor / Remitente:** Vendedor (`vendedor1@crm.bo`) o Administrador
-* **Asunto (Subject):**
+### PASO 5: El Docente avanza el lead a Promesa de Pago (Etapa 4)
+* **¿Quién lo envía?:** El Docente.
+* **Asunto del Correo:**
   ```text
-  VERKANBAN[]
+  MOVERETAPA["15", "4"]
   ```
-* **Respuesta:** Tabla con las 6 etapas del embudo comercial:
-  * Etapa 1 (Nuevo)
-  * Etapa 2 (En Contacto)
-  * Etapa 3 (Seguimiento)
-  * Etapa 4 (Promesa de Pago)
-  * Etapa 5 (Convertido)
-  * Etapa 6 (Perdido)
-* **Siguiente Asunto (Avanzar Etapa):**
-  ```text
-  MOVERETAPA["15","4"]
-  ```
-  *(El vendedor contactó al prospecto y este confirmó que pagará hoy: avanza a Etapa 4 Promesa de Pago)*.
-* **Respuesta:** `[EXITO] El prospecto #15 avanzó a la etapa Promesa de Pago. Evento registrado en bitácora.`
+* **Qué decirle al Ingeniero:**  
+  *«Ingeniero, el vendedor ya contactó al prospecto y este acordó realizar la transferencia bancaria hoy mismo. Por tanto, muévalo a la Etapa 4 (Promesa de Pago).»*
+* **Tip de Respaldo (Si pregunta qué etapas existen):**  
+  *«Las 6 etapas estándar del embudo comercial son: 1. Nuevo, 2. En Contacto, 3. Seguimiento, 4. Promesa de Pago, 5. Convertido, 6. Perdido.»*
+* **Respuesta que recibe el Docente:**  
+  `[EXITO] Etapa Comercial Actualizada: El prospecto #15 avanzó a 'Promesa de Pago'. Hito documentado en bitácora.`
 
 ---
 
-#### PASO 6: CU7 - Registro de Interacción en Bitácora (Minuto 12)
-* **Actor / Remitente:** Vendedor (`vendedor1@crm.bo`)
-* **Asunto (Subject):**
+### PASO 6: El Docente registra el Comprobante Bancario
+* **¿Quién lo envía?:** El Docente.
+* **Asunto del Correo:**
   ```text
-  AGREGARNOTA["15","El prospecto confirma depósito mediante transferencia Banco Unión para el Diplomado en Ciberseguridad."]
+  REGISTRARCOMPROBANTE["15", "Banco Mercantil Santa Cruz", "TR-998877", "2500.00"]
   ```
-* **Acción en el Sistema:** Inserta en la tabla `bitacora` tipo `NOTA` con fecha/hora oficial.
-* **Respuesta:** `[EXITO] Nota comercial registrada en la bitácora del prospecto #15.`
+* **Qué decirle al Ingeniero:**  
+  *«El prospecto envió su comprobante de pago por 2,500 Bs. Registre el comprobante con: ID Lead, Banco emisor, Número de transacción y Monto abonado.»*
+* **Respuesta que recibe el Docente:**  
+  `[EXITO] Comprobante de Pago Registrado: Comprobante #1 ingresado a la cola de verificación contable en estado PENDIENTE.`  
+  *(Anotar el ID del comprobante generado, por ejemplo `#1`)*.
 
 ---
 
-#### PASO 7: CU6 - Registro de Pago y Conversión a Matrícula (Minuto 13 - Clímax Comercial)
-* **Actor / Remitente:** Vendedor / Alumno / Admin
-* **Asunto (Paso A - Subir Comprobante):**
+### PASO 7: El Docente aprueba el Pago Bancario
+* **¿Quién lo envía?:** El Docente (con su rol Administrador).
+* **Asunto del Correo:**
   ```text
-  REGISTRARCOMPROBANTE["15","BANCO_UNION","TRANS-987654","1500.00"]
+  APROBARPAGO["1"]
   ```
-* **Respuesta:** `[EXITO] Comprobante de pago registrado con ID #8. Estado: PENDIENTE DE REVISIÓN.`
+  *(Reemplazar `1` por el ID del comprobante obtenido en el Paso 6).*
+* **Qué decirle al Ingeniero:**  
+  *«Como Administrador, usted valida que los fondos ingresaron efectivamente a la cuenta institucional y aprueba el pago para habilitar la matrícula.»*
+* **Respuesta que recibe el Docente:**  
+  `[EXITO] Pago Aprobado Satisfactoriamente: Comprobante #1 validado con éxito. El prospecto queda habilitado para formalizar matrícula.`
 
-* **Asunto (Paso B - Aprobación del Administrador):**
+---
+
+### PASO 8: El Docente completa los datos del Alumno (Expediente)
+* **¿Quién lo envía?:** El Docente.
+* **Asunto del Correo:**
   ```text
-  APROBARPAGO["8"]
+  COMPLETARDATOSALUMNO["15", "8921043 SC", "1998-05-14", "Santa Cruz de la Sierra"]
   ```
-* **Respuesta:** `[EXITO] Comprobante #8 APROBADO por Administración.`
+* **Qué decirle al Ingeniero:**  
+  *«Para emitir el título o constancia formal, completamos los datos reglamentarios: Cédula de Identidad, Fecha de Nacimiento (YYYY-MM-DD) y Ciudad de Residencia.»*
+* **Respuesta que recibe el Docente:**  
+  `[EXITO] Datos Académicos Registrados: Expediente del prospecto #15 actualizado con todos los requisitos formales.`
 
-* **Asunto (Paso C - Completar Datos y Convertir a Alumno):**
-  ```text
-  COMPLETARDATOSALUMNO["15","6845123","1998-05-14","Santa Cruz"]
-  ```
-  *(Completa CI, Fecha de Nacimiento y Ciudad requeridos por la institución)*.
+---
 
-* **Asunto (Paso D - Conversión Definitiva):**
+### PASO 9: El Docente formaliza la Matrícula Regular
+* **¿Quién lo envía?:** El Docente.
+* **Asunto del Correo:**
   ```text
   CONVERTIRAMATRICULA["15"]
   ```
-* **Acción en el Sistema:** Pasa al lead a **Etapa 5 (Convertido)**, marca el cierre de venta exitoso y emite constancia de matrícula.
-* **Respuesta:** `[EXITO] ¡Prospecto convertido formalmente en Alumno! Matrícula generada.`
+* **Qué decirle al Ingeniero:**  
+  *«Ahora ejecutamos el cierre institucional. El sistema valida automáticamente que el pago esté aprobado y el expediente completo, crea el registro de matrícula y avanza el prospecto a Etapa 5 (Convertido).»*
+* **Respuesta que recibe el Docente:**  
+  El docente recibe un diploma/credencial institucional formal con:
+  * Título: **Constancia Oficial de Matrícula Académica**
+  * Código Oficial: `MATR-2026-15`
+  * Nombre: `Carlos Villagomez`
+  * Cédula: `8921043 SC`
+  * Etapa Final: Badge verde `[Convertido]`
+  * Autorizado por: `Ing. Evans Balcazar (Administrador)`
 
 ---
 
-#### PASO 8: CU8 - Métricas y Reporte del Embudo Final (Minuto 15)
-* **Actor / Remitente:** Administrador (`admin@crm.bo`)
-* **Asunto (Subject):**
+### PASO 10: Verificación Final en el Embudo Comercial
+* **¿Quién lo envía?:** El Docente.
+* **Asunto del Correo:**
   ```text
-  REPORTEEMBUDO[]
+  LEADSETAPA["5"]
   ```
-* **Acción en el Sistema:** Realiza `GROUP BY` sobre `etapas_pipeline` y `leads`.
-* **Respuesta:** Reporte estadístico formal reflejando el incremento en la columna **Convertido** y la tasa de conversión actualizada.
+  *(O también con comillas: `LEADSETAPA["5"]`)*.
+* **Qué decirle al Ingeniero:**  
+  *«Ingeniero, para verificar la columna final de cierre de ventas, consulte los alumnos matriculados con LEADSETAPA[5].»*
+* **Respuesta que recibe el Docente:**  
+  Tabla formal de la **Columna Kanban: Convertido** donde figura claramente **Carlos Villagomez** con su correo, teléfono y vendedor asignado.
 
 ---
 
-## 🔀 Alternativa Rápida para CU5 (Motivos de Pérdida):
-Si el docente pide: *«¿Y qué pasa si el prospecto decide no inscribirse?»*, se ejecuta inmediatamente:
-* **Asunto:**
+## 🛡️ 4. Preguntas Típicas del Docente y Respuestas Inmediatas
+
+### Pregunta 1: *«¿Y qué pasa si el prospecto decide no inscribirse o cancela?»*
+* **Respuesta Inmediata:**  
+  *«Ingeniero, tenemos implementado el CU5 de Motivos de Pérdida. Primero puede enviar `LISTARMOTIVOSPERDIDA[]` para ver las causales (Presupuesto, Falta de Tiempo, Prefirió Otra Institución, etc.) y luego ejecutar:»*
   ```text
-  MARCARPERDIDO["15","1","El cliente indica que se quedó sin presupuesto para esta versión."]
+  MARCARPERDIDO["15", "1", "El cliente indica que se quedó sin presupuesto este semestre"]
   ```
-* **Acción:** Pasa a etapa 6 (Perdido), exige `id_motivo_perdida = 1` y almacena la justificación obligatoria en la base de datos.
+  *«El sistema mueve el lead a la Etapa 6 (Perdido), registra la causa y exige una justificación obligatoria en bitácora para análisis gerencial.»*
+
+### Pregunta 2: *«¿Y cómo ve el Administrador las estadísticas globales de ventas?»*
+* **Respuesta Inmediata:**  
+  *«Enviamos cualquiera de los comandos del CU8:»*
+  * `REPORTEEMBUDO[]` *(Distribución porcentual de prospectos en las 6 etapas)*
+  * `REPORTECONVERSION[]` *(Tasa de éxito comercial y ventas por ejecutivo)*
+  * `REPORTEORIGENES[]` *(Efectividad de Facebook vs Google Ads vs TikTok)*
+  * `REPORTEMOTIVOSPERDIDA[]` *(Principales razones de fuga de clientes)*
+
+### Pregunta 3: *«¿Cómo manejan la asignación equitativa entre vendedores?»*
+* **Respuesta Inmediata:**  
+  *«Mediante el algoritmo rotativo Round-Robin:»*
+  ```text
+  EJECUTARROUNDROBIN[]
+  ```
+  *«Toma a los prospectos de la Bolsa Común y los distribuye equitativamente entre los vendedores activos con `recibe_round_robin = true`, actualizando el índice rotativo en memoria y registrando el traspaso en auditoría.»*
+
+### Pregunta 4: *«¿Qué pasa si la base de datos se apaga y vuelve a levantarse?»*
+* **Respuesta Inmediata:**  
+  *«Nuestro pool dinámico en `DatabaseConnection.java` verifica el estado en cada petición. Si la base cae, el sistema captura la excepción, avisa educadamente al usuario por correo que el servicio está en mantenimiento temporal y, en cuanto PostgreSQL se levanta de nuevo, el sistema se reconecta automáticamente sin necesidad de reiniciar el proceso Java.»*
+
+---
+
+## 💻 5. Verificación en Terminal PostgreSQL durante la Defensa
+
+Si el Ingeniero pide ver las tablas directamente en la consola de Linux:
+
+```bash
+# Entrar a PostgreSQL
+psql -U postgres -d crm_educativo
+
+# Ver todas las tablas (debe mostrar las 25 tablas físicas)
+\dt
+
+# Ver el lead registrado en Etapa 5
+SELECT id_lead, nombre, correo, id_etapa, id_vendedor FROM leads WHERE correo = 'carlos.v@gmail.com';
+
+# Ver el comprobante aprobado
+SELECT id_comprobante, id_lead, banco, nro_transaccion, monto, estado FROM comprobantes_pago;
+
+# Ver la matrícula formal emitida
+SELECT id_matricula, codigo_matricula, id_lead, id_programa, fecha_matricula FROM matriculas;
+
+# Salir de psql
+\q
+```
+
+---
+
+## 🚀 6. Comando para Iniciar el Servidor de Correos el Día de la Defensa
+
+```bash
+cd /home/nataly/Projects/TECNO/crm_correo/INF513_P1
+
+# Compilar todo el proyecto
+javac -encoding UTF-8 -cp "lib/postgresql.jar:." -d bin $(find src/main/java -name "*.java")
+
+# Levantar el Demonio de Correos (POP3 puerto 110 + SMTP puerto 25)
+java -cp "lib/postgresql.jar:bin" com.tecnoweb.grupo05sc.Main
+```

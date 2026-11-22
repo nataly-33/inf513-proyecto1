@@ -20,13 +20,26 @@ public final class DatabaseConnection {
         }
     }
 
+    private static volatile boolean estuveCaido = false;
+
     private DatabaseConnection() {}
 
     /**
      * Obtiene una nueva conexión lista para operaciones de base de datos.
+     * Si la base de datos estuvo caída y vuelve a responder, notifica la reconexión automática.
      */
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(Config.DB_URL, Config.DB_USER, Config.DB_PASS);
+        try {
+            Connection conn = DriverManager.getConnection(Config.DB_URL, Config.DB_USER, Config.DB_PASS);
+            if (estuveCaido) {
+                System.out.println(">>> [DB RESTABLECIDA] Conexión a PostgreSQL recuperada exitosamente en " + Config.DB_HOST + ":" + Config.DB_PORT);
+                estuveCaido = false;
+            }
+            return conn;
+        } catch (SQLException e) {
+            estuveCaido = true;
+            throw e;
+        }
     }
 
     /**

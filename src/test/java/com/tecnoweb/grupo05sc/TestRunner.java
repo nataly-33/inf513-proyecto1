@@ -1495,6 +1495,292 @@ public class TestRunner {
             System.err.println("❌ TEST 70 EXCEPCIÓN: " + e.getMessage());
         }
 
+        // =============================================================
+        // SIMULACIÓN COMPLETA DEL FLUJO DE DEFENSA EN VIVO CON EL DOCENTE
+        // (Flujo oficial: Evans Balcazar desde HELP hasta Matrícula en Etapa 5)
+        // =============================================================
+        System.out.println("\n--- SIMULANDO FLUJO EXACTO DE DEFENSA EN VIVO (DOCENTE ING. EVANS BALCAZAR) ---");
+        limpiarLeadPrueba("carlos.v@gmail.com");
+        limpiarUsuarioPrueba("evansbv@gmail.com");
+
+        // -------------------------------------------------------------
+        // TEST 71: Docente envía HELP[] inicialmente
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("evansbv@gmail.com", "HELP[]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Catalogo Oficial de Comandos")) {
+                System.out.println("✔ TEST 71 PASÓ: Docente envía HELP[] y recibe catálogo interactivo del sistema.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 71 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 71 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 72: Administrador da de alta al docente como Administrador
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            String cmdCrearDocente = "CREARUSUARIO[\"Ing. Evans Balcazar\", \"evansbv@gmail.com\", \"12345678\", \"Administrador\"]";
+            CommandResult result = dispatcher.dispatch("nataly.vane.mm@gmail.com", cmdCrearDocente);
+            if (result.isSuccess() && result.getHtmlBody().contains("Usuario Creado Exitosamente")) {
+                System.out.println("✔ TEST 72 PASÓ: Administrador creó la cuenta para el Ing. Evans Balcazar con rol Administrador.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 72 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 72 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 73: Docente verifica su identidad como Administrador
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("evansbv@gmail.com", "QUIENSOY[]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Ing. Evans Balcazar") && result.getHtmlBody().contains("Administrador")) {
+                System.out.println("✔ TEST 73 PASÓ: QUIENSOY[] confirmó que el Ing. Evans Balcazar opera con rol Administrador.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 73 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 73 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 74: Docente registra nuevo prospecto (Carlos Villagomez)
+        // -------------------------------------------------------------
+        totalTests++;
+        long idLeadDefensa = -1;
+        try {
+            String cmdRegLead = "REGISTRARPROSPECTO[\"Carlos Villagomez\", \"70012345\", \"carlos.v@gmail.com\", \"Facebook\", \"Ingeniería de Sistemas / Software\"]";
+            CommandResult result = dispatcher.dispatch("evansbv@gmail.com", cmdRegLead);
+            if (result.isSuccess() && result.getHtmlBody().contains("satisfactoriamente")) {
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement("SELECT id_lead FROM leads WHERE correo = 'carlos.v@gmail.com'")) {
+                    ResultSet rs = ps.executeQuery();
+                    if (rs.next()) {
+                        idLeadDefensa = rs.getLong("id_lead");
+                        System.out.println("✔ TEST 74 PASÓ: Docente registró prospecto #" + idLeadDefensa + " (Carlos Villagomez) en etapa 1 (Nuevo).");
+                        testsPassed++;
+                    }
+                }
+            } else {
+                System.err.println("❌ TEST 74 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 74 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 75: Docente consulta la oferta académica disponible
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("evansbv@gmail.com", "LISTAROFERTA[]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Oferta Academica Disponible") && result.getHtmlBody().contains("101")) {
+                System.out.println("✔ TEST 75 PASÓ: Docente consultó LISTAROFERTA[] y visualizó programas y módulos.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 75 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 75 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 76: Docente vincula interés académico al prospecto
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadDefensa > 0) {
+                String cmdVinc = "VINCULARINTERES[\"" + idLeadDefensa + "\", \"PROGRAMA\", \"101\", \"Diplomado en Ciberseguridad Defensiva\"]";
+                CommandResult result = dispatcher.dispatch("evansbv@gmail.com", cmdVinc);
+                if (result.isSuccess() && result.getHtmlBody().contains("Interes Academico Vinculado")) {
+                    System.out.println("✔ TEST 76 PASÓ: Docente vinculó programa #101 al prospecto #" + idLeadDefensa + ".");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 76 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 76 OMITIDO: idLeadDefensa <= 0");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 76 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 77: Docente lista usuarios para identificar vendedor
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("evansbv@gmail.com", "LISTARUSUARIOS[]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Vendedor")) {
+                System.out.println("✔ TEST 77 PASÓ: Docente listó usuarios e identificó ejecutivos comerciales.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 77 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 77 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 78: Docente asigna manualmente el prospecto a vendedor #3
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadDefensa > 0) {
+                String cmdAsignar = "ASIGNARMANUAL[\"" + idLeadDefensa + "\", \"3\"]";
+                CommandResult result = dispatcher.dispatch("evansbv@gmail.com", cmdAsignar);
+                if (result.isSuccess() && result.getHtmlBody().contains("Asignacion Manual Exitosa")) {
+                    System.out.println("✔ TEST 78 PASÓ: Docente asignó formalmente el lead #" + idLeadDefensa + " a Vendedor #3.");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 78 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 78 OMITIDO: idLeadDefensa <= 0");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 78 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 79: Docente avanza el lead a Etapa 4 (Promesa de Pago)
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadDefensa > 0) {
+                String cmdMover = "MOVERETAPA[\"" + idLeadDefensa + "\", \"4\"]";
+                CommandResult result = dispatcher.dispatch("evansbv@gmail.com", cmdMover);
+                if (result.isSuccess() && result.getHtmlBody().contains("Etapa Comercial Actualizada")) {
+                    System.out.println("✔ TEST 79 PASÓ: Docente avanzó el lead #" + idLeadDefensa + " a Etapa 4 (Promesa de Pago).");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 79 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 79 OMITIDO: idLeadDefensa <= 0");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 79 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 80: Docente registra comprobante bancario
+        // -------------------------------------------------------------
+        totalTests++;
+        long idCompDefensa = -1;
+        try {
+            if (idLeadDefensa > 0) {
+                String cmdComp = "REGISTRARCOMPROBANTE[\"" + idLeadDefensa + "\", \"Banco Mercantil Santa Cruz\", \"TR-998877\", \"2500.00\"]";
+                CommandResult result = dispatcher.dispatch("evansbv@gmail.com", cmdComp);
+                if (result.isSuccess() && result.getHtmlBody().contains("Comprobante de Pago Registrado")) {
+                    try (Connection conn = DatabaseConnection.getConnection();
+                         PreparedStatement ps = conn.prepareStatement("SELECT id_comprobante FROM comprobantes_pago WHERE id_lead = ? ORDER BY id_comprobante DESC LIMIT 1")) {
+                        ps.setLong(1, idLeadDefensa);
+                        ResultSet rs = ps.executeQuery();
+                        if (rs.next()) {
+                            idCompDefensa = rs.getLong("id_comprobante");
+                            System.out.println("✔ TEST 80 PASÓ: Docente registró comprobante #" + idCompDefensa + " en estado PENDIENTE.");
+                            testsPassed++;
+                        }
+                    }
+                } else {
+                    System.err.println("❌ TEST 80 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 80 OMITIDO: idLeadDefensa <= 0");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 80 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 81: Docente aprueba el comprobante de pago
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idCompDefensa > 0) {
+                String cmdAprobar = "APROBARPAGO[\"" + idCompDefensa + "\"]";
+                CommandResult result = dispatcher.dispatch("evansbv@gmail.com", cmdAprobar);
+                if (result.isSuccess() && result.getHtmlBody().contains("Pago Aprobado Satisfactoriamente")) {
+                    System.out.println("✔ TEST 81 PASÓ: Docente aprobó el comprobante #" + idCompDefensa + " como Administrador.");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 81 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 81 OMITIDO: idCompDefensa <= 0");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 81 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 82: Docente completa datos formales del alumno
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadDefensa > 0) {
+                String cmdDatos = "COMPLETARDATOSALUMNO[\"" + idLeadDefensa + "\", \"8921043 SC\", \"1998-05-14\", \"Santa Cruz de la Sierra\"]";
+                CommandResult result = dispatcher.dispatch("evansbv@gmail.com", cmdDatos);
+                if (result.isSuccess() && result.getHtmlBody().contains("Datos Academicos Registrados")) {
+                    System.out.println("✔ TEST 82 PASÓ: Docente completó el expediente académico (CI, fecha nacimiento, ciudad).");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 82 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 82 OMITIDO: idLeadDefensa <= 0");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 82 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 83: Docente convierte a matrícula y emite constancia
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadDefensa > 0) {
+                String cmdMatricula = "CONVERTIRAMATRICULA[\"" + idLeadDefensa + "\"]";
+                CommandResult result = dispatcher.dispatch("evansbv@gmail.com", cmdMatricula);
+                if (result.isSuccess() && result.getHtmlBody().contains("Constancia Oficial de Matricula Academica") && result.getHtmlBody().contains("MATR-2026-" + idLeadDefensa)) {
+                    System.out.println("✔ TEST 83 PASÓ: Docente convirtió al prospecto #" + idLeadDefensa + " en Alumno Matriculado con constancia oficial.");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 83 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 83 OMITIDO: idLeadDefensa <= 0");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 83 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 84: Docente verifica que el alumno está en Etapa 5 (Convertido)
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("evansbv@gmail.com", "LEADSETAPA[\"5\"]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Carlos Villagomez")) {
+                System.out.println("✔ TEST 84 PASÓ: LEADSETAPA[\"5\"] confirmó que Carlos Villagomez figura oficialmente en Etapa 5 (Convertido).");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 84 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 84 EXCEPCIÓN: " + e.getMessage());
+        }
+
         // Limpieza final de prueba
         limpiarUsuarioPrueba("mariana.suarez@crm.bo");
         limpiarUsuarioPrueba("mariana.modificada@crm.bo");
@@ -1502,6 +1788,8 @@ public class TestRunner {
         limpiarLeadPrueba("perdido.test@gmail.com");
         limpiarLeadPrueba("matricula.test@gmail.com");
         limpiarLeadPrueba("sinpago@test.com");
+        limpiarLeadPrueba("carlos.v@gmail.com");
+        limpiarUsuarioPrueba("evansbv@gmail.com");
 
         System.out.println("\n==========================================================================");
         System.out.println("  RESUMEN FINAL: " + testsPassed + " de " + totalTests + " pruebas pasaron con éxito (" + (testsPassed * 100 / totalTests) + "%).");
@@ -1509,18 +1797,67 @@ public class TestRunner {
     }
 
     private static void limpiarUsuarioPrueba(String correo) {
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM usuarios WHERE LOWER(correo) = LOWER(?)")) {
-            ps.setString(1, correo);
-            ps.executeUpdate();
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            Long idUser = null;
+            try (PreparedStatement ps = conn.prepareStatement("SELECT id_usuario FROM usuarios WHERE LOWER(correo) = LOWER(?)")) {
+                ps.setString(1, correo);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) idUser = rs.getLong(1);
+            }
+            if (idUser != null) {
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM comprobantes_pago WHERE id_aprobador = ?")) {
+                    ps.setLong(1, idUser); ps.executeUpdate();
+                } catch (Exception ignored) {}
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM historial_asignaciones WHERE id_vendedor_asignado = ? OR id_usuario_accion = ?")) {
+                    ps.setLong(1, idUser); ps.setLong(2, idUser); ps.executeUpdate();
+                } catch (Exception ignored) {}
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM notas_lead WHERE id_usuario = ?")) {
+                    ps.setLong(1, idUser); ps.executeUpdate();
+                } catch (Exception ignored) {}
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM recordatorios WHERE id_usuario = ?")) {
+                    ps.setLong(1, idUser); ps.executeUpdate();
+                } catch (Exception ignored) {}
+                try (PreparedStatement ps = conn.prepareStatement("UPDATE leads SET id_vendedor = NULL WHERE id_vendedor = ?")) {
+                    ps.setLong(1, idUser); ps.executeUpdate();
+                } catch (Exception ignored) {}
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM usuarios WHERE id_usuario = ?")) {
+                    ps.setLong(1, idUser); ps.executeUpdate();
+                }
+            }
         } catch (Exception ignored) {}
     }
 
     private static void limpiarLeadPrueba(String correo) {
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM leads WHERE LOWER(correo) = LOWER(?)")) {
-            ps.setString(1, correo);
-            ps.executeUpdate();
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            Long idLead = null;
+            try (PreparedStatement ps = conn.prepareStatement("SELECT id_lead FROM leads WHERE LOWER(correo) = LOWER(?)")) {
+                ps.setString(1, correo);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) idLead = rs.getLong(1);
+            }
+            if (idLead != null) {
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM comprobantes_pago WHERE id_lead = ?")) {
+                    ps.setLong(1, idLead); ps.executeUpdate();
+                } catch (Exception ignored) {}
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM matriculas WHERE id_lead = ?")) {
+                    ps.setLong(1, idLead); ps.executeUpdate();
+                } catch (Exception ignored) {}
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM historial_asignaciones WHERE id_lead = ?")) {
+                    ps.setLong(1, idLead); ps.executeUpdate();
+                } catch (Exception ignored) {}
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM intereses_lead WHERE id_lead = ?")) {
+                    ps.setLong(1, idLead); ps.executeUpdate();
+                } catch (Exception ignored) {}
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM notas_lead WHERE id_lead = ?")) {
+                    ps.setLong(1, idLead); ps.executeUpdate();
+                } catch (Exception ignored) {}
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM recordatorios WHERE id_lead = ?")) {
+                    ps.setLong(1, idLead); ps.executeUpdate();
+                } catch (Exception ignored) {}
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM leads WHERE id_lead = ?")) {
+                    ps.setLong(1, idLead); ps.executeUpdate();
+                }
+            }
         } catch (Exception ignored) {}
     }
 }
