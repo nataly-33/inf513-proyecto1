@@ -62,6 +62,40 @@ public final class LeadService {
             );
         }
 
+        // Validación estricta de teléfono (7 u 8 dígitos, celulares inician en 6 o 7, fijos en 2, 3 o 4)
+        String cleanPhone = telefono.replaceAll("[\\s\\-\\+\\(\\)]", "");
+        if (cleanPhone.startsWith("591")) {
+            cleanPhone = cleanPhone.substring(3);
+        }
+
+        if (!cleanPhone.matches("\\d+")) {
+            throw new CommandException(
+                "El telefono '" + telefono + "' contiene caracteres invalidos.",
+                "El numero telefonico debe contener unicamente digitos numericos."
+            );
+        }
+
+        if (cleanPhone.length() < 7 || cleanPhone.length() > 8) {
+            throw new CommandException(
+                "El telefono '" + telefono + "' debe tener 7 u 8 digitos numericos.",
+                "Ejemplo: Celular de 8 digitos como 70011223 o telefono fijo de 7 digitos como 3344556."
+            );
+        }
+
+        if (cleanPhone.length() == 8 && !cleanPhone.startsWith("6") && !cleanPhone.startsWith("7")) {
+            throw new CommandException(
+                "El numero celular de 8 digitos '" + cleanPhone + "' es invalido.",
+                "En Bolivia los telefonos celulares deben iniciar con 6 o 7 (ej. 70011223, 68901234)."
+            );
+        }
+
+        if (cleanPhone.length() == 7 && !cleanPhone.startsWith("2") && !cleanPhone.startsWith("3") && !cleanPhone.startsWith("4")) {
+            throw new CommandException(
+                "El telefono fijo de 7 digitos '" + cleanPhone + "' es invalido.",
+                "En Bolivia los telefonos fijos inician con 3 (Santa Cruz), 2 (La Paz) o 4 (Cochabamba)."
+            );
+        }
+
         if (!correo.isEmpty() && !EMAIL_PATTERN.matcher(correo).matches()) {
             throw new CommandException(
                 "El formato del correo electronico '" + correo + "' es invalido.",
@@ -69,12 +103,25 @@ public final class LeadService {
             );
         }
 
-        // Resolucion de llaves foraneas
-        long idOrigen = leadDao.obtenerIdOrigenPorNombre(origen);
+        // Verificación y resolución de canal de origen válido
+        Long idOrigen = leadDao.buscarIdOrigen(origen);
+        if (idOrigen == null) {
+            List<LeadDao.CatalogoDTO> origenes = leadDao.listarOrigenes();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < origenes.size(); i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(origenes.get(i).getNombre());
+            }
+            throw new CommandException(
+                "El canal de origen '" + origen + "' no es valido.",
+                "Origenes validos: " + sb.toString() + ". Ejecute el comando LISTARORIGENES[] para consultar el catalogo disponible."
+            );
+        }
+
         Long idProfesion = !profesion.isEmpty() ? leadDao.obtenerIdProfesionPorNombre(profesion) : null;
         long createdBy = (auth != null) ? auth.getIdUsuario() : 1L; // 1 = Admin por defecto si es invitado
 
-        long newLeadId = leadDao.insertarLead(nombre, telefono, correo, idOrigen, idProfesion, createdBy);
+        long newLeadId = leadDao.insertarLead(nombre, cleanPhone, correo, idOrigen, idProfesion, createdBy);
         LeadDao.LeadDTO lead = leadDao.buscarPorId(newLeadId);
 
         String details = "<table style='width: 100%; border-collapse: collapse; font-size: 13px;'>" +
@@ -118,13 +165,49 @@ public final class LeadService {
             );
         }
 
-        if (nombreCurso.isEmpty()) {
-            throw new CommandException("El nombre del programa o modulo no puede estar vacio.");
+        // Verificación contra el catálogo oficial de oferta académica
+        LeadDao.OfertaItem oferta = LeadDao.buscarOferta(tipo, idExterno);
+        if (oferta == null) {
+            throw new CommandException(
+                "El ID externo #" + idExterno + " no corresponde a ningun " + tipo.toLowerCase() + " disponible en la oferta academica.",
+                tipo + "s disponibles: " + LeadDao.resumenOferta(tipo) + ". Ejecute el comando LISTAROFERTA[] o HELP[\"VINCULARINTERES\"] para consultar codigos."
+            );
+        }
+
+        if (nombreCurso.isEmpty() || nombreCurso.equalsIgnoreCase(tipo)) {
+            nombreCurso = oferta.getNombre();
         }
 
         LeadDao.LeadDTO lead = leadDao.buscarPorId(idLead);
         if (lead == null) {
             throw new CommandException("No existe ningun prospecto registrado con el ID #" + idLead + ".");
+        }
+
+        // Control de permisos: Personal institucional (Admin, Coord, Vend asignado) o el propio prospecto por correo
+        boolean autorizado = false;
+        if (auth != null && auth.esPersonal()) {
+            if (auth.esVendedor()) {
+                if (lead.getIdVendedor() != null && lead.getIdVendedor() == auth.getIdUsuario()) {
+                    autorizado = true;
+                } else {
+                    throw new CommandException(
+                        "Acceso denegado: El prospecto #" + idLead + " no pertenece a su cartera comercial.",
+                        "Solo puede vincular ofertas a prospectos asignados a su cuenta."
+                    );
+                }
+            } else {
+                autorizado = true; // Admin o Coordinador
+            }
+        } else if (auth != null && lead.getCorreo() != null && !lead.getCorreo().isEmpty() &&
+                   auth.getEmail().equalsIgnoreCase(lead.getCorreo().trim())) {
+            autorizado = true; // El propio prospecto registrando su interés
+        }
+
+        if (!autorizado) {
+            throw new CommandException(
+                "Acceso denegado: Remitente no autorizado para vincular intereses en este prospecto.",
+                "Solo el vendedor asignado, el administrador o el propio interesado (" + lead.getCorreo() + ") pueden gestionar intereses."
+            );
         }
 
         long idInteres = leadDao.vincularInteres(idLead, tipo, idExterno, nombreCurso);
@@ -213,5 +296,32 @@ public final class LeadService {
 
         String html = HtmlTemplate.wrapContainer("Catalogo de Profesiones Registradas", "CATALOGO", HtmlTemplate.table(headers, rows));
         return CommandResult.success(Config.SUBJECT_PREFIX + " Catalogo de Profesiones", html);
+    }
+
+    /**
+     * Comando: LISTAROFERTA[]
+     * Muestra el catalogo completo de programas y modulos ofertados.
+     */
+    public CommandResult listarOferta(UsuarioAuth auth) throws Exception {
+        List<LeadDao.OfertaItem> items = LeadDao.getCatalogoOferta();
+        String[] headers = new String[]{"ID", "TIPO", "CODIGO", "PROGRAMA / MODULO", "DURACION", "INVERSION (BS.)"};
+        List<String[]> rows = new ArrayList<>();
+
+        for (LeadDao.OfertaItem item : items) {
+            rows.add(new String[]{
+                "#" + item.getId(),
+                item.getTipo(),
+                item.getCodigo(),
+                "<b>" + item.getNombre() + "</b>",
+                item.getDuracion(),
+                String.format("%.2f Bs.", item.getCostoBs())
+            });
+        }
+
+        String summary = "<p style='font-size: 13px; margin-top: 0;'>Oferta academica oficial de programas y modulos de postgrado y capacitacion continua.</p>";
+        String tableHtml = HtmlTemplate.table(headers, rows);
+        String html = HtmlTemplate.wrapContainer("Oferta Academica Disponible", "CATALOGO", summary + tableHtml);
+
+        return CommandResult.success(Config.SUBJECT_PREFIX + " Oferta Academica (" + items.size() + " cursos)", html);
     }
 }

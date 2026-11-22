@@ -1,6 +1,5 @@
 # 🎯 GUÍA DE PRUEBA MANUAL PASO A PASO: CASO DE USO 4 (CU4 - EMBUDO DE VENTAS KANBAN)
 ### INF513 - Tecnología Web | Grupo 05 SC | Docente: Msc. Ing. Evans Balcázar Veizaga
-### Responsable Oficial: Nicol (Dev B)
 
 ---
 

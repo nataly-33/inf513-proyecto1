@@ -63,6 +63,14 @@ public final class UsuarioAuth {
         return idRol == 3 || "Vendedor".equalsIgnoreCase(rolNombre);
     }
 
+    public boolean esPersonal() {
+        return esAdmin() || esCoordinador() || esVendedor();
+    }
+
+    public String getEmail() {
+        return correo;
+    }
+
     @Override
     public String toString() {
         return "UsuarioAuth{" +

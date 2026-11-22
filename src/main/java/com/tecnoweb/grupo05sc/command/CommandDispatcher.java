@@ -27,11 +27,15 @@ public final class CommandDispatcher {
     private final com.tecnoweb.grupo05sc.service.LeadService leadService = new com.tecnoweb.grupo05sc.service.LeadService();
     private final com.tecnoweb.grupo05sc.service.AsignacionService asignacionService = new com.tecnoweb.grupo05sc.service.AsignacionService();
     private final com.tecnoweb.grupo05sc.service.PipelineService pipelineService = new com.tecnoweb.grupo05sc.service.PipelineService();
+    private final com.tecnoweb.grupo05sc.service.MotivoPerdidaService motivoService = new com.tecnoweb.grupo05sc.service.MotivoPerdidaService();
+    private final com.tecnoweb.grupo05sc.service.PagoMatriculaService pagoService = new com.tecnoweb.grupo05sc.service.PagoMatriculaService();
+    private final com.tecnoweb.grupo05sc.service.BitacoraService bitacoraService = new com.tecnoweb.grupo05sc.service.BitacoraService();
+    private final com.tecnoweb.grupo05sc.service.ReporteService reporteService = new com.tecnoweb.grupo05sc.service.ReporteService();
 
     private static final List<String> COMANDOS_VALIDOS = Arrays.asList(
         "HELP", "AYUDA", "QUIENSOY",
         "LISTARUSUARIOS", "BUSCARUSUARIO", "CREARUSUARIO", "MODIFICARUSUARIO", "TOGGLEUSUARIO", "TOGGLEROUNDROBIN",
-        "REGISTRARPROSPECTO", "VINCULARINTERES", "LISTARINTERESES", "LISTARORIGENES", "LISTARPROFESIONES",
+        "REGISTRARPROSPECTO", "VINCULARINTERES", "LISTARINTERESES", "LISTARORIGENES", "LISTARPROFESIONES", "LISTAROFERTA",
         "BOLSACOMUN", "ASIGNARMANUAL", "EJECUTARROUNDROBIN", "TRANSFERIRLEAD", "HISTORIALASIGNACIONES",
         "VERKANBAN", "VEREMBUDO", "LEADSETAPA", "MOVERETAPA", "MISLEADS",
         "LISTARMOTIVOSPERDIDA", "MARCARPERDIDO", "LISTARPERDIDOS",
@@ -71,15 +75,16 @@ public final class CommandDispatcher {
                 case "TOGGLEROUNDROBIN":
                     return handleModuloUsuarios(cmd, fromEmail);
 
-                // CU2: Captacion de Leads y Oferta (Jael)
+                // Modulo: Captacion de Leads y Oferta
                 case "REGISTRARPROSPECTO":
                 case "VINCULARINTERES":
                 case "LISTARINTERESES":
                 case "LISTARORIGENES":
                 case "LISTARPROFESIONES":
+                case "LISTAROFERTA":
                     return handleModuloCaptacion(cmd, fromEmail);
 
-                // CU3: Asignacion de Leads (Nicol)
+                // Modulo: Asignacion de Leads
                 case "BOLSACOMUN":
                 case "ASIGNARMANUAL":
                 case "EJECUTARROUNDROBIN":
@@ -87,7 +92,7 @@ public final class CommandDispatcher {
                 case "HISTORIALASIGNACIONES":
                     return handleModuloAsignacion(cmd, fromEmail);
 
-                // CU4: Embudo de Ventas Kanban (Nicol)
+                // Modulo: Embudo de Ventas Kanban
                 case "VERKANBAN":
                 case "VEREMBUDO":
                 case "LEADSETAPA":
@@ -95,13 +100,13 @@ public final class CommandDispatcher {
                 case "MISLEADS":
                     return handleModuloKanban(cmd, fromEmail);
 
-                // CU5: Motivos de Perdida (Nicol)
+                // Modulo: Motivos de Perdida
                 case "LISTARMOTIVOSPERDIDA":
                 case "MARCARPERDIDO":
                 case "LISTARPERDIDOS":
                     return handleModuloPerdida(cmd, fromEmail);
 
-                // CU6: Pagos y Matricula (Nataly)
+                // Modulo: Pagos y Matricula
                 case "REGISTRARCOMPROBANTE":
                 case "PAGOSPENDIENTES":
                 case "APROBARPAGO":
@@ -110,7 +115,7 @@ public final class CommandDispatcher {
                 case "CONVERTIRAMATRICULA":
                     return handleModuloMatricula(cmd, fromEmail);
 
-                // CU7: Bitacora y Recordatorios (Nataly)
+                // Modulo: Bitacora y Recordatorios
                 case "VERBITACORA":
                 case "AGREGARNOTA":
                 case "CREARRECORDATORIO":
@@ -118,7 +123,7 @@ public final class CommandDispatcher {
                 case "COMPLETARRECORDATORIO":
                     return handleModuloBitacora(cmd, fromEmail);
 
-                // CU8: Reportes y Estadisticas (Jael)
+                // Modulo: Reportes y Estadisticas
                 case "REPORTEEMBUDO":
                 case "REPORTECONVERSION":
                 case "REPORTEORIGENES":
@@ -178,60 +183,61 @@ public final class CommandDispatcher {
         rows.add(new String[]{"GENERAL", "HELP", "[] o [\"COMANDO\"]", "Muestra esta guia completa o la sintaxis de un comando"});
         rows.add(new String[]{"GENERAL", "QUIENSOY", "[]", "Muestra informacion de identidad, rol y estado del remitente"});
 
-        // 2. CU1: GESTION DE USUARIOS (Nataly)
-        rows.add(new String[]{"CU1 USUARIOS", "LISTARUSUARIOS", "[]", "Lista usuarios, roles y estados (Solo Administrador)"});
-        rows.add(new String[]{"CU1 USUARIOS", "BUSCARUSUARIO", "[\"id_o_correo\"]", "Busca la ficha de un usuario por ID o correo (Admin)"});
-        rows.add(new String[]{"CU1 USUARIOS", "CREARUSUARIO", "[\"nom\",\"correo\",\"pass\",\"rol\"]", "Registra nuevo usuario institucional (Admin)"});
-        rows.add(new String[]{"CU1 USUARIOS", "MODIFICARUSUARIO", "[\"id\",\"nom\",\"correo\",\"rol\"]", "Actualiza datos institucionales de un usuario (Admin)"});
-        rows.add(new String[]{"CU1 USUARIOS", "TOGGLEUSUARIO", "[\"id_usuario\"]", "Activa o desactiva usuario (Proteccion anti-autobloqueo)"});
-        rows.add(new String[]{"CU1 USUARIOS", "TOGGLEROUNDROBIN", "[\"id_vendedor\"]", "Incluye o excluye vendedor del reparto automatico"});
+        // 2. GESTION DE USUARIOS
+        rows.add(new String[]{"USUARIOS", "LISTARUSUARIOS", "[]", "Lista usuarios, roles y estados (Solo Administrador)"});
+        rows.add(new String[]{"USUARIOS", "BUSCARUSUARIO", "[\"id_o_correo\"]", "Busca la ficha de un usuario por ID o correo (Admin)"});
+        rows.add(new String[]{"USUARIOS", "CREARUSUARIO", "[\"nom\",\"correo\",\"pass\",\"rol\"]", "Registra nuevo usuario institucional (Admin)"});
+        rows.add(new String[]{"USUARIOS", "MODIFICARUSUARIO", "[\"id\",\"nom\",\"correo\",\"rol\"]", "Actualiza datos institucionales de un usuario (Admin)"});
+        rows.add(new String[]{"USUARIOS", "TOGGLEUSUARIO", "[\"id_usuario\"]", "Activa o desactiva usuario (Proteccion anti-autobloqueo)"});
+        rows.add(new String[]{"USUARIOS", "TOGGLEROUNDROBIN", "[\"id_vendedor\"]", "Incluye o excluye vendedor del reparto automatico"});
 
-        // 3. CU2: CAPTACION Y OFERTA (Jael)
-        rows.add(new String[]{"CU2 CAPTACION", "REGISTRARPROSPECTO", "[\"nom\",\"telf\",\"mail\",\"origen\",\"prof\"]", "Registra un nuevo prospecto en etapa 'Nuevo'"});
-        rows.add(new String[]{"CU2 CAPTACION", "VINCULARINTERES", "[\"id_lead\",\"tipo\",\"id_ext\",\"curso\"]", "Vincula interes academico (programa o modulo)"});
-        rows.add(new String[]{"CU2 CAPTACION", "LISTARINTERESES", "[\"id_lead\"]", "Lista los intereses academicos de un prospecto"});
-        rows.add(new String[]{"CU2 CAPTACION", "LISTARORIGENES", "[]", "Lista los canales de captacion (Facebook, Web, etc.)"});
-        rows.add(new String[]{"CU2 CAPTACION", "LISTARPROFESIONES", "[]", "Lista el catalogo de profesiones registradas"});
+        // 3. CAPTACION Y OFERTA ACADEMICA
+        rows.add(new String[]{"PROSPECTOS", "REGISTRARPROSPECTO", "[\"nom\",\"telf\",\"mail\",\"origen\",\"prof\"]", "Registra un nuevo prospecto en etapa 'Nuevo'"});
+        rows.add(new String[]{"OFERTA", "LISTAROFERTA", "[]", "Catalogo oficial de programas y modulos ofertados"});
+        rows.add(new String[]{"OFERTA", "VINCULARINTERES", "[\"id_lead\",\"tipo\",\"id_ext\",\"curso\"]", "Vincula interes academico (programa o modulo)"});
+        rows.add(new String[]{"OFERTA", "LISTARINTERESES", "[\"id_lead\"]", "Lista los intereses academicos de un prospecto"});
+        rows.add(new String[]{"CATALOGO", "LISTARORIGENES", "[]", "Lista los canales de captacion (Facebook, Web, etc.)"});
+        rows.add(new String[]{"CATALOGO", "LISTARPROFESIONES", "[]", "Lista el catalogo de profesiones registradas"});
 
-        // 4. CU3: ASIGNACIONES (Nicol)
-        rows.add(new String[]{"CU3 ASIGNACION", "BOLSACOMUN", "[]", "Lista prospectos no asignados en espera de atencion"});
-        rows.add(new String[]{"CU3 ASIGNACION", "ASIGNARMANUAL", "[\"id_lead\",\"id_vendedor\"]", "Asigna prospecto directamente a un vendedor"});
-        rows.add(new String[]{"CU3 ASIGNACION", "EJECUTARROUNDROBIN", "[]", "Distribuye equitativamente prospectos a vendedores activos"});
-        rows.add(new String[]{"CU3 ASIGNACION", "TRANSFERIRLEAD", "[\"id_lead\",\"id_nuevo_vend\",\"motivo\"]", "Reasigna prospecto exigiendo motivo formal"});
-        rows.add(new String[]{"CU3 ASIGNACION", "HISTORIALASIGNACIONES", "[\"id_lead\"]", "Muestra auditoria de traspasos del prospecto"});
+        // 4. ASIGNACIONES Y FUERZA DE VENTAS
+        rows.add(new String[]{"ASIGNACION", "BOLSACOMUN", "[]", "Lista prospectos no asignados en espera de atencion"});
+        rows.add(new String[]{"ASIGNACION", "ASIGNARMANUAL", "[\"id_lead\",\"id_vendedor\"]", "Asigna prospecto directamente a un vendedor (Admin)"});
+        rows.add(new String[]{"ASIGNACION", "EJECUTARROUNDROBIN", "[]", "Distribuye equitativamente prospectos a vendedores activos (Admin)"});
+        rows.add(new String[]{"ASIGNACION", "TRANSFERIRLEAD", "[\"id_lead\",\"id_nuevo_vend\",\"motivo\"]", "Reasigna prospecto exigiendo motivo formal (Admin)"});
+        rows.add(new String[]{"ASIGNACION", "HISTORIALASIGNACIONES", "[\"id_lead\"]", "Muestra auditoria de traspasos del prospecto"});
 
-        // 5. CU4: EMBUDO KANBAN (Nicol)
-        rows.add(new String[]{"CU4 KANBAN", "VERKANBAN", "[] o [\"id_vendedor\"]", "Genera el Tablero Kanban con las 6 etapas"});
-        rows.add(new String[]{"CU4 KANBAN", "LEADSETAPA", "[\"id_etapa\"]", "Lista los prospectos en una etapa especifica (1-6)"});
-        rows.add(new String[]{"CU4 KANBAN", "MOVERETAPA", "[\"id_lead\",\"id_nueva_etapa\"]", "Avanza de etapa en el embudo (Audita en bitacora)"});
-        rows.add(new String[]{"CU4 KANBAN", "MISLEADS", "[]", "Lista la cartera comercial del vendedor remitente"});
+        // 5. EMBUDO DE VENTAS KANBAN
+        rows.add(new String[]{"KANBAN", "VERKANBAN", "[] o [\"id_vendedor\"]", "Genera el Tablero Kanban con las 6 etapas"});
+        rows.add(new String[]{"KANBAN", "LEADSETAPA", "[\"id_etapa\"]", "Lista los prospectos en una etapa especifica (1-6)"});
+        rows.add(new String[]{"KANBAN", "MOVERETAPA", "[\"id_lead\",\"id_nueva_etapa\"]", "Avanza de etapa en el embudo (Audita en bitacora)"});
+        rows.add(new String[]{"KANBAN", "MISLEADS", "[]", "Lista la cartera comercial del vendedor remitente"});
 
-        // 6. CU5: MOTIVOS DE PERDIDA (Nicol)
-        rows.add(new String[]{"CU5 PERDIDA", "LISTARMOTIVOSPERDIDA", "[]", "Lista el catalogo de motivos de desistimiento"});
-        rows.add(new String[]{"CU5 PERDIDA", "MARCARPERDIDO", "[\"id_lead\",\"id_motivo\",\"comentario\"]", "Pasa a etapa 6 exigiendo motivo y comentario"});
-        rows.add(new String[]{"CU5 PERDIDA", "LISTARPERDIDOS", "[]", "Lista prospectos perdidos con sus justificaciones"});
+        // 6. GESTION DE PERDIDA Y DESISTIMIENTO
+        rows.add(new String[]{"PERDIDA", "LISTARMOTIVOSPERDIDA", "[]", "Lista el catalogo de motivos de desistimiento"});
+        rows.add(new String[]{"PERDIDA", "MARCARPERDIDO", "[\"id_lead\",\"id_motivo\",\"comentario\"]", "Pasa a etapa 6 exigiendo motivo y comentario"});
+        rows.add(new String[]{"PERDIDA", "LISTARPERDIDOS", "[]", "Lista prospectos perdidos con sus justificaciones"});
 
-        // 7. CU6: MATRICULA Y PAGOS (Nataly)
-        rows.add(new String[]{"CU6 PAGOS", "REGISTRARCOMPROBANTE", "[\"id_lead\",\"banco\",\"nro_trans\",\"monto\"]", "Registra comprobante de deposito bancario"});
-        rows.add(new String[]{"CU6 PAGOS", "PAGOSPENDIENTES", "[]", "Lista comprobantes pendientes de verificacion"});
-        rows.add(new String[]{"CU6 PAGOS", "APROBARPAGO", "[\"id_comprobante\"]", "Aprueba comprobante y habilita la matriculacion"});
-        rows.add(new String[]{"CU6 PAGOS", "RECHAZARPAGO", "[\"id_comprobante\",\"motivo\"]", "Rechaza comprobante por inconsistencia"});
-        rows.add(new String[]{"CU6 PAGOS", "COMPLETARDATOSALUMNO", "[\"id_lead\",\"ci\",\"fecha_nac\",\"ciudad\"]", "Registra datos formales de alumno"});
-        rows.add(new String[]{"CU6 PAGOS", "CONVERTIRAMATRICULA", "[\"id_lead\"]", "Valida pago y datos, pasa a Convertido y emite constancia"});
+        // 7. PAGOS Y MATRICULACION
+        rows.add(new String[]{"PAGOS", "REGISTRARCOMPROBANTE", "[\"id_lead\",\"banco\",\"nro_trans\",\"monto\"]", "Registra comprobante de deposito bancario"});
+        rows.add(new String[]{"PAGOS", "PAGOSPENDIENTES", "[]", "Lista comprobantes pendientes de verificacion (Admin)"});
+        rows.add(new String[]{"PAGOS", "APROBARPAGO", "[\"id_comprobante\"]", "Aprueba comprobante y habilita la matriculacion (Admin)"});
+        rows.add(new String[]{"PAGOS", "RECHAZARPAGO", "[\"id_comprobante\",\"motivo\"]", "Rechaza comprobante por inconsistencia (Admin)"});
+        rows.add(new String[]{"MATRICULA", "COMPLETARDATOSALUMNO", "[\"id_lead\",\"ci\",\"fecha_nac\",\"ciudad\"]", "Registra datos formales de alumno"});
+        rows.add(new String[]{"MATRICULA", "CONVERTIRAMATRICULA", "[\"id_lead\"]", "Valida pago y datos, pasa a Convertido y emite constancia (Admin)"});
 
-        // 8. CU7: BITACORA Y RECORDATORIOS (Nataly)
-        rows.add(new String[]{"CU7 BITACORA", "VERBITACORA", "[\"id_lead\"]", "Muestra timeline cronologica de eventos del prospecto"});
-        rows.add(new String[]{"CU7 BITACORA", "AGREGARNOTA", "[\"id_lead\",\"contenido_nota\"]", "Registra nota de seguimiento comercial"});
-        rows.add(new String[]{"CU7 BITACORA", "CREARRECORDATORIO", "[\"id_lead\",\"yyyy-MM-dd HH:mm\",\"desc\"]", "Programa recordatorio de llamada o tarea"});
-        rows.add(new String[]{"CU7 BITACORA", "MISRECORDATORIOS", "[]", "Lista tareas y recordatorios pendientes del vendedor"});
-        rows.add(new String[]{"CU7 BITACORA", "COMPLETARRECORDATORIO", "[\"id_recordatorio\"]", "Marca recordatorio como finalizado"});
+        // 8. BITACORA Y RECORDATORIOS
+        rows.add(new String[]{"BITACORA", "VERBITACORA", "[\"id_lead\"]", "Muestra timeline cronologica de eventos del prospecto"});
+        rows.add(new String[]{"BITACORA", "AGREGARNOTA", "[\"id_lead\",\"contenido_nota\"]", "Registra nota de seguimiento comercial"});
+        rows.add(new String[]{"BITACORA", "CREARRECORDATORIO", "[\"id_lead\",\"yyyy-MM-dd HH:mm\",\"desc\"]", "Programa recordatorio de llamada o tarea"});
+        rows.add(new String[]{"BITACORA", "MISRECORDATORIOS", "[]", "Lista tareas y recordatorios pendientes del vendedor"});
+        rows.add(new String[]{"BITACORA", "COMPLETARRECORDATORIO", "[\"id_recordatorio\"]", "Marca recordatorio como finalizado"});
 
-        // 9. CU8: REPORTES Y ESTADISTICAS (Jael)
-        rows.add(new String[]{"CU8 REPORTES", "REPORTEEMBUDO", "[]", "Volumen y porcentaje de prospectos por etapa"});
-        rows.add(new String[]{"CU8 REPORTES", "REPORTECONVERSION", "[]", "Tasa de conversion global y por vendedor"});
-        rows.add(new String[]{"CU8 REPORTES", "REPORTEORIGENES", "[]", "Distribucion de prospectos segun canal de captacion"});
-        rows.add(new String[]{"CU8 REPORTES", "REPORTEMOTIVOSPERDIDA", "[]", "Estadisticas de principales motivos de abandono"});
-        rows.add(new String[]{"CU8 REPORTES", "DASHBOARDVENDEDOR", "[]", "Panel de metricas personales del vendedor"});
+        // 9. REPORTES ESTADISTICOS
+        rows.add(new String[]{"REPORTES", "REPORTEEMBUDO", "[]", "Volumen y porcentaje de prospectos por etapa"});
+        rows.add(new String[]{"REPORTES", "REPORTECONVERSION", "[]", "Tasa de conversion global y por vendedor"});
+        rows.add(new String[]{"REPORTES", "REPORTEORIGENES", "[]", "Distribucion de prospectos segun canal de captacion"});
+        rows.add(new String[]{"REPORTES", "REPORTEMOTIVOSPERDIDA", "[]", "Estadisticas de principales motivos de abandono"});
+        rows.add(new String[]{"REPORTES", "DASHBOARDVENDEDOR", "[]", "Panel de metricas personales del vendedor"});
 
         sb.append(HtmlTemplate.table(headers, rows));
         sb.append("<p style='font-size: 12px; color: #666666; margin-top: 8px;'>Para consultar la sintaxis y parametros de un comando particular, envie: <code>HELP[\"NOMBRE_COMANDO\"]</code>.</p>");
@@ -254,8 +260,53 @@ public final class CommandDispatcher {
                 info = "<p><b>Comando:</b> REGISTRARPROSPECTO</p>" +
                        "<p><b>Sintaxis:</b> <code>REGISTRARPROSPECTO[\"nombre\", \"telefono\", \"correo\", \"origen\", \"profesion\"]</code></p>" +
                        "<p><b>Roles permitidos:</b> Administrador, Coordinador, Vendedor, Invitado</p>" +
-                       "<p><b>Ejemplo:</b> <code>REGISTRARPROSPECTO[\"Carlos Andres\", \"70012345\", \"carlos@gmail.com\", \"Facebook Ads\", \"Ingeniero de Sistemas\"]</code></p>" +
+                       "<p><b>Validaciones:</b> Telefono de 7 u 8 digitos (celulares inician con 6 o 7). Canal de origen validado contra catalogo.</p>" +
+                       "<p><b>Ejemplo:</b> <code>REGISTRARPROSPECTO[\"Carlos Andres\", \"70012345\", \"carlos@gmail.com\", \"Facebook\", \"Ingenieria de Sistemas\"]</code></p>" +
                        "<p><b>Descripcion:</b> Da de alta un prospecto en etapa 1 (Nuevo) y lo coloca en la Bolsa Comun sin vendedor asignado.</p>";
+                break;
+            case "LISTAROFERTA":
+                info = "<p><b>Comando:</b> LISTAROFERTA</p>" +
+                       "<p><b>Sintaxis:</b> <code>LISTAROFERTA[]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Todos (Publico y Personal)</p>" +
+                       "<p><b>Descripcion:</b> Consulta el catalogo de programas y modulos con sus codigos, duracion y arancel en Bolivianos.</p>";
+                break;
+            case "VINCULARINTERES":
+                info = "<p><b>Comando:</b> VINCULARINTERES</p>" +
+                       "<p><b>Sintaxis:</b> <code>VINCULARINTERES[\"id_lead\", \"tipo_oferta\", \"id_externo\", \"nombre_curso\"]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Coordinador, Vendedor asignado o el propio prospecto</p>" +
+                       "<p><b>Tipos validos:</b> <code>PROGRAMA</code> o <code>MODULO</code></p>" +
+                       "<p><b>Programas disponibles:</b> #101 Ciberseguridad Defensiva, #102 Maestria TI, #103 Inteligencia Artificial, #104 Desarrollo Full Stack.<br/>" +
+                       "<b>Modulos disponibles:</b> #201 Hacking Etico, #202 Redes y Respuesta, #203 Cloud AWS/GCP, #204 Machine Learning Python.</p>" +
+                       "<p><b>Ejemplo:</b> <code>VINCULARINTERES[\"15\", \"PROGRAMA\", \"101\", \"Diplomado en Ciberseguridad Defensiva\"]</code></p>";
+                break;
+            case "MARCARPERDIDO":
+                info = "<p><b>Comando:</b> MARCARPERDIDO</p>" +
+                       "<p><b>Sintaxis:</b> <code>MARCARPERDIDO[\"id_lead\", \"id_motivo\", \"comentario\"]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Vendedor asignado</p>" +
+                       "<p><b>Motivos comunes:</b> #1 Factor economico, #2 Horario no disponible, #3 Ya no interesado, #4 Sin respuesta.</p>" +
+                       "<p><b>Ejemplo:</b> <code>MARCARPERDIDO[\"15\", \"1\", \"El arancel mensual excede su capacidad de pago actual\"]</code></p>" +
+                       "<p><b>Descripcion:</b> Clasifica el lead en etapa 6 (Perdido) auditando la causa y justificacion en bitacora.</p>";
+                break;
+            case "REGISTRARCOMPROBANTE":
+                info = "<p><b>Comando:</b> REGISTRARCOMPROBANTE</p>" +
+                       "<p><b>Sintaxis:</b> <code>REGISTRARCOMPROBANTE[\"id_lead\", \"banco\", \"nro_trans\", \"monto\"]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Vendedor asignado</p>" +
+                       "<p><b>Ejemplo:</b> <code>REGISTRARCOMPROBANTE[\"15\", \"Banco Mercantil\", \"982104\", \"2500.00\"]</code></p>" +
+                       "<p><b>Descripcion:</b> Registra deposito en comprobantes_pago con estado PENDIENTE y avanza a etapa 4 (Promesa de Pago).</p>";
+                break;
+            case "APROBARPAGO":
+                info = "<p><b>Comando:</b> APROBARPAGO</p>" +
+                       "<p><b>Sintaxis:</b> <code>APROBARPAGO[\"id_comprobante\"]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador</p>" +
+                       "<p><b>Ejemplo:</b> <code>APROBARPAGO[\"3\"]</code></p>" +
+                       "<p><b>Descripcion:</b> Valida el deposito bancario, marcandolo como APROBADO para habilitar la matriculacion.</p>";
+                break;
+            case "COMPLETARDATOSALUMNO":
+                info = "<p><b>Comando:</b> COMPLETARDATOSALUMNO</p>" +
+                       "<p><b>Sintaxis:</b> <code>COMPLETARDATOSALUMNO[\"id_lead\", \"ci\", \"fecha_nac\", \"ciudad\"]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Vendedor asignado</p>" +
+                       "<p><b>Formato fecha:</b> YYYY-MM-DD (ejemplo: 1998-05-14)</p>" +
+                       "<p><b>Ejemplo:</b> <code>COMPLETARDATOSALUMNO[\"15\", \"8291043 SC\", \"1998-05-14\", \"Santa Cruz\"]</code></p>";
                 break;
             case "VERKANBAN":
                 info = "<p><b>Comando:</b> VERKANBAN</p>" +
@@ -266,8 +317,71 @@ public final class CommandDispatcher {
             case "CONVERTIRAMATRICULA":
                 info = "<p><b>Comando:</b> CONVERTIRAMATRICULA</p>" +
                        "<p><b>Sintaxis:</b> <code>CONVERTIRAMATRICULA[\"id_lead\"]</code></p>" +
-                       "<p><b>Roles permitidos:</b> Administrador, Coordinador</p>" +
+                       "<p><b>Roles permitidos:</b> Administrador</p>" +
                        "<p><b>Descripcion:</b> Verifica que el prospecto tenga comprobante de pago aprobado y datos de alumno completos (CI, fecha nacimiento, ciudad), pasandolo a etapa 5 (Convertido).</p>";
+                break;
+            case "VERBITACORA":
+                info = "<p><b>Comando:</b> VERBITACORA</p>" +
+                       "<p><b>Sintaxis:</b> <code>VERBITACORA[\"id_lead\"]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Coordinador, Vendedor</p>" +
+                       "<p><b>Descripcion:</b> Despliega la linea de tiempo cronologica con todos los eventos, notas, transiciones de etapa y pagos registrados para un prospecto.</p>";
+                break;
+            case "AGREGARNOTA":
+                info = "<p><b>Comando:</b> AGREGARNOTA</p>" +
+                       "<p><b>Sintaxis:</b> <code>AGREGARNOTA[\"id_lead\", \"contenido_nota\"]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Vendedor asignado</p>" +
+                       "<p><b>Ejemplo:</b> <code>AGREGARNOTA[\"1\", \"Cliente solicita envio de temario detallado por WhatsApp\"]</code></p>" +
+                       "<p><b>Descripcion:</b> Registra una anotacion cualitativa sobre la interaccion comercial con el cliente en su expediente.</p>";
+                break;
+            case "CREARRECORDATORIO":
+                info = "<p><b>Comando:</b> CREARRECORDATORIO</p>" +
+                       "<p><b>Sintaxis:</b> <code>CREARRECORDATORIO[\"id_lead\", \"yyyy-MM-dd HH:mm\", \"descripcion\"]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Vendedor</p>" +
+                       "<p><b>Ejemplo:</b> <code>CREARRECORDATORIO[\"1\", \"2026-11-28 15:30\", \"Llamar para coordinar modalidad de pago\"]</code></p>" +
+                       "<p><b>Descripcion:</b> Programa una alarma o compromiso comercial futuro con fecha y hora exacta en la agenda del remitente.</p>";
+                break;
+            case "MISRECORDATORIOS":
+                info = "<p><b>Comando:</b> MISRECORDATORIOS</p>" +
+                       "<p><b>Sintaxis:</b> <code>MISRECORDATORIOS[]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Vendedor</p>" +
+                       "<p><b>Descripcion:</b> Muestra la lista de tareas y compromisos pendientes programados en la agenda del usuario que envia el correo.</p>";
+                break;
+            case "COMPLETARRECORDATORIO":
+                info = "<p><b>Comando:</b> COMPLETARRECORDATORIO</p>" +
+                       "<p><b>Sintaxis:</b> <code>COMPLETARRECORDATORIO[\"id_recordatorio\"]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Vendedor</p>" +
+                       "<p><b>Ejemplo:</b> <code>COMPLETARRECORDATORIO[\"1\"]</code></p>" +
+                       "<p><b>Descripcion:</b> Marca un recordatorio o compromiso como atendido y finalizado, registrando el cierre en la bitacora.</p>";
+                break;
+            case "REPORTEEMBUDO":
+                info = "<p><b>Comando:</b> REPORTEEMBUDO</p>" +
+                       "<p><b>Sintaxis:</b> <code>REPORTEEMBUDO[]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Coordinador</p>" +
+                       "<p><b>Descripcion:</b> Despliega el volumen de prospectos y porcentaje de participacion a lo largo de las 6 etapas del embudo comercial.</p>";
+                break;
+            case "REPORTECONVERSION":
+                info = "<p><b>Comando:</b> REPORTECONVERSION</p>" +
+                       "<p><b>Sintaxis:</b> <code>REPORTECONVERSION[]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Coordinador</p>" +
+                       "<p><b>Descripcion:</b> Consolida las tasas globales de conversion y desercion, junto con la matriz de desempeno comercial por vendedor.</p>";
+                break;
+            case "REPORTEORIGENES":
+                info = "<p><b>Comando:</b> REPORTEORIGENES</p>" +
+                       "<p><b>Sintaxis:</b> <code>REPORTEORIGENES[]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Coordinador</p>" +
+                       "<p><b>Descripcion:</b> Muestra la distribucion de prospectos captados y matriculados agrupados por canal de origen (Facebook, WhatsApp, Web, etc.).</p>";
+                break;
+            case "REPORTEMOTIVOSPERDIDA":
+                info = "<p><b>Comando:</b> REPORTEMOTIVOSPERDIDA</p>" +
+                       "<p><b>Sintaxis:</b> <code>REPORTEMOTIVOSPERDIDA[]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Coordinador</p>" +
+                       "<p><b>Descripcion:</b> Analisis estadistico de las causales de desistimiento y perdida comercial de prospectos.</p>";
+                break;
+            case "DASHBOARDVENDEDOR":
+                info = "<p><b>Comando:</b> DASHBOARDVENDEDOR</p>" +
+                       "<p><b>Sintaxis:</b> <code>DASHBOARDVENDEDOR[]</code></p>" +
+                       "<p><b>Roles permitidos:</b> Administrador, Vendedor</p>" +
+                       "<p><b>Descripcion:</b> Cuadro de mando individual con prospectos en cartera, activos, convertidos, perdidos, tasa de exito y recordatorios pendientes.</p>";
                 break;
             default:
                 info = "<p><b>Comando:</b> " + comando + "</p>" +
@@ -358,6 +472,8 @@ public final class CommandDispatcher {
                 return leadService.listarOrigenes(auth);
             case "LISTARPROFESIONES":
                 return leadService.listarProfesiones(auth);
+            case "LISTAROFERTA":
+                return leadService.listarOferta(auth);
             default:
                 throw new CommandException("Comando de captacion no implementado: " + cmd.getName());
         }
@@ -399,23 +515,73 @@ public final class CommandDispatcher {
     }
 
     private CommandResult handleModuloPerdida(ParsedCommand cmd, String fromEmail) throws Exception {
-        return CommandResult.success(Config.SUBJECT_PREFIX + " " + cmd.getName(),
-            HtmlTemplate.successCard("Modulo Motivos de Perdida (CU5 - Nicol)", "Comando " + cmd.getName() + " reconocido con exito.", "<p>Parametros recibidos: " + cmd.getParams() + "</p>"));
+        UsuarioAuth auth = SecurityContext.obtenerUsuario(fromEmail);
+        switch (cmd.getName()) {
+            case "LISTARMOTIVOSPERDIDA":
+                return motivoService.listarMotivosPerdida(auth);
+            case "MARCARPERDIDO":
+                return motivoService.marcarPerdido(auth, cmd);
+            case "LISTARPERDIDOS":
+                return motivoService.listarPerdidos(auth);
+            default:
+                throw new CommandException("Comando de motivos de perdida no implementado: " + cmd.getName());
+        }
     }
 
     private CommandResult handleModuloMatricula(ParsedCommand cmd, String fromEmail) throws Exception {
-        return CommandResult.success(Config.SUBJECT_PREFIX + " " + cmd.getName(),
-            HtmlTemplate.successCard("Modulo Conversion y Pagos (CU6 - Nataly)", "Comando " + cmd.getName() + " reconocido con exito.", "<p>Parametros recibidos: " + cmd.getParams() + "</p>"));
+        UsuarioAuth auth = SecurityContext.obtenerUsuario(fromEmail);
+        switch (cmd.getName()) {
+            case "REGISTRARCOMPROBANTE":
+                return pagoService.registrarComprobante(auth, cmd);
+            case "PAGOSPENDIENTES":
+                return pagoService.listarPagosPendientes(auth);
+            case "APROBARPAGO":
+                return pagoService.aprobarPago(auth, cmd);
+            case "RECHAZARPAGO":
+                return pagoService.rechazarPago(auth, cmd);
+            case "COMPLETARDATOSALUMNO":
+                return pagoService.completarDatosAlumno(auth, cmd);
+            case "CONVERTIRAMATRICULA":
+                return pagoService.convertirAMatricula(auth, cmd);
+            default:
+                throw new CommandException("Comando de pagos y matricula no implementado: " + cmd.getName());
+        }
     }
 
     private CommandResult handleModuloBitacora(ParsedCommand cmd, String fromEmail) throws Exception {
-        return CommandResult.success(Config.SUBJECT_PREFIX + " " + cmd.getName(),
-            HtmlTemplate.successCard("Modulo Bitacora y Recordatorios (CU7 - Nataly)", "Comando " + cmd.getName() + " reconocido con exito.", "<p>Parametros recibidos: " + cmd.getParams() + "</p>"));
+        UsuarioAuth auth = SecurityContext.obtenerUsuario(fromEmail);
+        switch (cmd.getName()) {
+            case "VERBITACORA":
+                return bitacoraService.verBitacora(auth, cmd);
+            case "AGREGARNOTA":
+                return bitacoraService.agregarNota(auth, cmd);
+            case "CREARRECORDATORIO":
+                return bitacoraService.crearRecordatorio(auth, cmd);
+            case "MISRECORDATORIOS":
+                return bitacoraService.misRecordatorios(auth);
+            case "COMPLETARRECORDATORIO":
+                return bitacoraService.completarRecordatorio(auth, cmd);
+            default:
+                throw new CommandException("Comando de bitacora no implementado: " + cmd.getName());
+        }
     }
 
     private CommandResult handleModuloReportes(ParsedCommand cmd, String fromEmail) throws Exception {
-        return CommandResult.success(Config.SUBJECT_PREFIX + " " + cmd.getName(),
-            HtmlTemplate.successCard("Modulo Reportes y Estadisticas (CU8 - Jael)", "Comando " + cmd.getName() + " reconocido con exito.", "<p>Parametros recibidos: " + cmd.getParams() + "</p>"));
+        UsuarioAuth auth = SecurityContext.obtenerUsuario(fromEmail);
+        switch (cmd.getName()) {
+            case "REPORTEEMBUDO":
+                return reporteService.reporteEmbudo(auth);
+            case "REPORTECONVERSION":
+                return reporteService.reporteConversion(auth);
+            case "REPORTEORIGENES":
+                return reporteService.reporteOrigenes(auth);
+            case "REPORTEMOTIVOSPERDIDA":
+                return reporteService.reporteMotivosPerdida(auth);
+            case "DASHBOARDVENDEDOR":
+                return reporteService.dashboardVendedor(auth);
+            default:
+                throw new CommandException("Comando de reportes no implementado: " + cmd.getName());
+        }
     }
 
     // =========================================================================

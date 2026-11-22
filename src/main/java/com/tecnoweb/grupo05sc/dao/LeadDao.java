@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -337,32 +338,59 @@ public final class LeadDao {
     }
 
     /**
-     * Resuelve el id_origen a partir de un nombre (ej. "Facebook", "WhatsApp", "Web").
+     * Valida si un canal de origen existe en la base de datos (por ID o por nombre).
+     * Devuelve el id_origen correspondiente, o null si no existe.
      */
-    public long obtenerIdOrigenPorNombre(String origen) throws SQLException {
-        if (origen == null || origen.trim().isEmpty()) return 3L; // Web por defecto
-        String clean = origen.trim().toLowerCase();
+    public Long buscarIdOrigen(String origen) throws SQLException {
+        if (origen == null || origen.trim().isEmpty()) return 3L; // Web por defecto si viene vacio
+        String clean = origen.trim();
 
-        String sql = "SELECT id_origen FROM origenes_lead WHERE LOWER(nombre) LIKE ? LIMIT 1";
+        // 1. Si es numerico, verificar por id_origen
+        if (clean.matches("\\d+")) {
+            long id = Long.parseLong(clean);
+            String sqlId = "SELECT id_origen FROM origenes_lead WHERE id_origen = ?";
+            Connection conn = null;
+            PreparedStatement ps = null;
+            ResultSet rs = null;
+            try {
+                conn = DatabaseConnection.getConnection();
+                ps = conn.prepareStatement(sqlId);
+                ps.setLong(1, id);
+                rs = ps.executeQuery();
+                if (rs.next()) return rs.getLong("id_origen");
+            } finally {
+                DatabaseConnection.close(rs);
+                DatabaseConnection.close(ps);
+                DatabaseConnection.close(conn);
+            }
+        }
 
+        // 2. Buscar por nombre exacto o aproximado
+        String sql = "SELECT id_origen FROM origenes_lead WHERE LOWER(TRIM(nombre)) = LOWER(TRIM(?)) OR LOWER(nombre) LIKE ? ORDER BY id_origen ASC LIMIT 1";
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
-
         try {
             conn = DatabaseConnection.getConnection();
             ps = conn.prepareStatement(sql);
-            ps.setString(1, "%" + clean + "%");
+            ps.setString(1, clean);
+            ps.setString(2, "%" + clean.toLowerCase() + "%");
             rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getLong("id_origen");
-            }
-            return 3L; // Web por defecto
+            if (rs.next()) return rs.getLong("id_origen");
         } finally {
             DatabaseConnection.close(rs);
             DatabaseConnection.close(ps);
             DatabaseConnection.close(conn);
         }
+        return null; // No existe
+    }
+
+    /**
+     * Resuelve el id_origen a partir de un nombre (ej. "Facebook", "WhatsApp", "Web").
+     */
+    public long obtenerIdOrigenPorNombre(String origen) throws SQLException {
+        Long id = buscarIdOrigen(origen);
+        return id != null ? id : 3L;
     }
 
     /**
@@ -439,5 +467,73 @@ public final class LeadDao {
             rs.getString("profesion_nombre"),
             rs.getString("created_at")
         );
+    }
+
+    // =========================================================================
+    // CATÁLOGO INSTITUCIONAL DE OFERTA ACADÉMICA
+    // =========================================================================
+
+    public static class OfertaItem {
+        private final long id;
+        private final String tipo; // "PROGRAMA" o "MODULO"
+        private final String codigo;
+        private final String nombre;
+        private final String duracion;
+        private final double costoBs;
+
+        public OfertaItem(long id, String tipo, String codigo, String nombre, String duracion, double costoBs) {
+            this.id = id;
+            this.tipo = tipo;
+            this.codigo = codigo;
+            this.nombre = nombre;
+            this.duracion = duracion;
+            this.costoBs = costoBs;
+        }
+
+        public long getId() { return id; }
+        public String getTipo() { return tipo; }
+        public String getCodigo() { return codigo; }
+        public String getNombre() { return nombre; }
+        public String getDuracion() { return duracion; }
+        public double getCostoBs() { return costoBs; }
+    }
+
+    private static final List<OfertaItem> CATALOGO_OFERTA = new ArrayList<>();
+    static {
+        // Programas
+        CATALOGO_OFERTA.add(new OfertaItem(101, "PROGRAMA", "PROG-101", "Diplomado en Ciberseguridad Defensiva y Peritaje Forense", "6 meses", 4500.00));
+        CATALOGO_OFERTA.add(new OfertaItem(102, "PROGRAMA", "PROG-102", "Maestria en Gestion Estrategica de Tecnologias de Informacion", "18 meses", 14000.00));
+        CATALOGO_OFERTA.add(new OfertaItem(103, "PROGRAMA", "PROG-103", "Diplomado en Inteligencia Artificial Aplicada y Machine Learning", "6 meses", 4800.00));
+        CATALOGO_OFERTA.add(new OfertaItem(104, "PROGRAMA", "PROG-104", "Diplomado en Desarrollo Full Stack y Cloud Architecture", "6 meses", 4200.00));
+        // Modulos
+        CATALOGO_OFERTA.add(new OfertaItem(201, "MODULO", "MOD-201", "Hacking Etico y Auditoria Ofensiva de Sistemas", "4 semanas", 1200.00));
+        CATALOGO_OFERTA.add(new OfertaItem(202, "MODULO", "MOD-202", "Seguridad en Redes y Respuesta ante Incidentes", "4 semanas", 1200.00));
+        CATALOGO_OFERTA.add(new OfertaItem(203, "MODULO", "MOD-203", "Arquitectura Cloud Empresarial en AWS y Google Cloud", "4 semanas", 1300.00));
+        CATALOGO_OFERTA.add(new OfertaItem(204, "MODULO", "MOD-204", "Modelos Predictivos y Deep Learning con Python", "4 semanas", 1350.00));
+    }
+
+    public static List<OfertaItem> getCatalogoOferta() {
+        return Collections.unmodifiableList(CATALOGO_OFERTA);
+    }
+
+    public static OfertaItem buscarOferta(String tipo, long id) {
+        if (tipo == null) return null;
+        for (OfertaItem item : CATALOGO_OFERTA) {
+            if (item.getTipo().equalsIgnoreCase(tipo.trim()) && item.getId() == id) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    public static String resumenOferta(String tipo) {
+        StringBuilder sb = new StringBuilder();
+        for (OfertaItem item : CATALOGO_OFERTA) {
+            if (tipo == null || item.getTipo().equalsIgnoreCase(tipo.trim())) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append("#").append(item.getId()).append(" '").append(item.getNombre()).append("'");
+            }
+        }
+        return sb.toString();
     }
 }

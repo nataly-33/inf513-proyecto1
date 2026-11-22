@@ -13,8 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Servicio de Negocio para el Caso de Uso 4 (CU4: Embudo de Ventas en Tablero Kanban).
- * Responsable oficial: Nicol (Dev B).
+ * Servicio de Negocio para el Embudo de Ventas en Tablero Kanban Comercial.
  *
  * Implementa las reglas institucionales:
  *   - Visualizacion del Tablero Kanban comercial con las 6 etapas obligatorias.
@@ -150,7 +149,7 @@ public final class PipelineService {
         if (idNuevaEtapa < 1 || idNuevaEtapa > 6) {
             throw new CommandException(
                 "La etapa destino #" + idNuevaEtapa + " no existe.",
-                "Las etapas institucionales validas son del 1 al 6."
+                "Las etapas van del 1 al 6: 1. Nuevo, 2. En Contacto, 3. Seguimiento, 4. Promesa de Pago, 5. Convertido, 6. Perdido."
             );
         }
 

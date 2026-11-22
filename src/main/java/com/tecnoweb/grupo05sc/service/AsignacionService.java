@@ -14,8 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Servicio de Negocio para el Caso de Uso 3 (CU3: Asignacion de Leads a la Fuerza de Ventas).
- * Responsable oficial: Nicol (Dev B).
+ * Servicio de Negocio para la Asignacion de Leads a la Fuerza de Ventas.
  *
  * Implementa las reglas institucionales:
  *   - Monitoreo en tiempo real de la Bolsa Comun de prospectos sin vendedor asignado.
@@ -78,9 +77,9 @@ public final class AsignacionService {
     public CommandResult asignarManual(UsuarioAuth auth, ParsedCommand cmd) throws Exception {
         SecurityContext.validarPersonal(auth);
 
-        if (!auth.esAdmin() && !auth.esCoordinador()) {
+        if (!auth.esAdmin()) {
             throw new CommandException(
-                "Acceso denegado: La asignacion manual es exclusiva para Administradores y Coordinadores.",
+                "Acceso denegado: La asignacion manual es exclusiva para el Administrador del sistema.",
                 "Su rol actual es '" + auth.getRolNombre() + "'."
             );
         }
@@ -144,9 +143,9 @@ public final class AsignacionService {
     public CommandResult ejecutarRoundRobin(UsuarioAuth auth) throws Exception {
         SecurityContext.validarPersonal(auth);
 
-        if (!auth.esAdmin() && !auth.esCoordinador()) {
+        if (!auth.esAdmin()) {
             throw new CommandException(
-                "Acceso denegado: La ejecucion del reparto Round-Robin es exclusiva para Administradores y Coordinadores.",
+                "Acceso denegado: La ejecucion del reparto Round-Robin es exclusiva para el Administrador del sistema.",
                 "Su rol actual es '" + auth.getRolNombre() + "'."
             );
         }
@@ -194,9 +193,9 @@ public final class AsignacionService {
     public CommandResult transferirLead(UsuarioAuth auth, ParsedCommand cmd) throws Exception {
         SecurityContext.validarPersonal(auth);
 
-        if (!auth.esAdmin() && !auth.esCoordinador()) {
+        if (!auth.esAdmin()) {
             throw new CommandException(
-                "Acceso denegado: La transferencia de prospectos es exclusiva para Administradores y Coordinadores.",
+                "Acceso denegado: La transferencia de prospectos es exclusiva para el Administrador del sistema.",
                 "Su rol actual es '" + auth.getRolNombre() + "'."
             );
         }

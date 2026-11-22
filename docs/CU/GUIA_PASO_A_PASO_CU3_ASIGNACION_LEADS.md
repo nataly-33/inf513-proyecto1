@@ -1,6 +1,5 @@
 # 🎯 GUÍA DE PRUEBA MANUAL PASO A PASO: CASO DE USO 3 (CU3 - ASIGNACIÓN DE LEADS)
 ### INF513 - Tecnología Web | Grupo 05 SC | Docente: Msc. Ing. Evans Balcázar Veizaga
-### Responsable Oficial: Nicol (Dev B)
 
 ---
 
@@ -74,9 +73,9 @@
 
 ### 🔹 PRUEBA 3.2: `ASIGNARMANUAL[...]` (Asignación Directa a un Vendedor)
 
-#### Caso A: Asignación Manual Exitosa (Admin / Coordinador)
+#### Caso A: Asignación Manual Exitosa (Exclusivo Administrador)
 * **Objetivo:** Asignar un lead de la Bolsa Común a la cartera de un vendedor específico, retirándolo de la bolsa y registrando la auditoría.
-* **Remitente Requerido (`From:`):** `admin@crm.bo` o `coordinador@crm.bo`
+* **Remitente Requerido (`From:`):** `admin@crm.bo`
 * **Asunto a Enviar (Exacto):** *(Reemplazar con un ID de lead existente en Bolsa Común y un ID de vendedor, por ejemplo lead #14 a vendedor #3)*
   ```text
   ASIGNARMANUAL["14", "3", "Asignacion directa por especialidad comercial"]
@@ -124,23 +123,23 @@
   Sugerencia: Los prospectos solo pueden ser asignados a usuarios con rol 'Vendedor'.
   ```
 
-#### Caso C: Bloqueo de Acceso a Vendedores (RBAC)
-* **Objetivo:** Un vendedor no tiene atribución de autoasignarse o asignar leads a otros compañeros.
-* **Remitente (`From:`):** `vendedor1@crm.bo`
+#### Caso C: Bloqueo de Acceso a Vendedores y Coordinadores (RBAC)
+* **Objetivo:** Ni los vendedores ni los coordinadores pueden asignar prospectos manualmente (función exclusiva del Administrador).
+* **Remitente (`From:`):** `coordinador@crm.bo` o `vendedor1@crm.bo`
 * **Asunto a Enviar:** `ASIGNARMANUAL["14", "3"]`
 * **Contenido HTML que Recibirás:**
   ```text
-  [ERROR] Acceso denegado: La asignacion manual es exclusiva para Administradores y Coordinadores.
-  Sugerencia: Su rol actual es 'Vendedor'.
+  [ERROR] Acceso denegado: La asignacion manual es exclusiva para el Administrador del sistema.
+  Sugerencia: Su rol actual es 'Coordinador' (o 'Vendedor').
   ```
 
 ---
 
 ### 🔹 PRUEBA 3.3: `EJECUTARROUNDROBIN[]` (Reparto Equitativo y Balanceado)
 
-#### Caso A: Reparto Automático con Prospectos Pendientes
+#### Caso A: Reparto Automático con Prospectos Pendientes (Exclusivo Administrador)
 * **Objetivo:** Asignar todos los prospectos en Bolsa Común de manera rotativa y equitativa entre los vendedores activos que tengan habilitado el indicador `participa_round_robin = true`.
-* **Remitente Requerido (`From:`):** `admin@crm.bo` o `coordinador@crm.bo`
+* **Remitente Requerido (`From:`):** `admin@crm.bo`
 * **Asunto a Enviar (Exacto):**
   ```text
   EJECUTARROUNDROBIN[]
@@ -181,9 +180,9 @@
 
 ### 🔹 PRUEBA 3.4: `TRANSFERIRLEAD[...]` (Reasignación con Motivo Obligatorio)
 
-#### Caso A: Transferencia Exitosa entre Vendedores
+#### Caso A: Transferencia Exitosa entre Vendedores (Exclusivo Administrador)
 * **Objetivo:** Transferir un lead de un vendedor titular a un nuevo vendedor, exigiendo justificación formal para trazabilidad de auditoría.
-* **Remitente Requerido (`From:`):** `admin@crm.bo` o `coordinador@crm.bo`
+* **Remitente Requerido (`From:`):** `admin@crm.bo`
 * **Asunto a Enviar (Exacto):**
   ```text
   TRANSFERIRLEAD["14", "4", "Reasignacion por sobrecarga comercial del vendedor titular"]
@@ -271,9 +270,9 @@
 | Comando | Parámetros | Rol Autorizado | Acción Clave |
 |---|---|---|---|
 | `BOLSACOMUN[]` | Ninguno | Personal (Admin, Coord, Vend) | Ver prospectos en espera |
-| `ASIGNARMANUAL["id_lead","id_vend","motivo"]` | 3 | Admin / Coordinador | Asignación directa y formal |
-| `EJECUTARROUNDROBIN[]` | Ninguno | Admin / Coordinador | Reparto automático equitativo |
-| `TRANSFERIRLEAD["id_lead","id_nuevo","motivo"]` | 3 | Admin / Coordinador | Traspaso con motivo obligatorio |
+| `ASIGNARMANUAL["id_lead","id_vend","motivo"]` | 3 | Administrador | Asignación directa y formal |
+| `EJECUTARROUNDROBIN[]` | Ninguno | Administrador | Reparto automático equitativo |
+| `TRANSFERIRLEAD["id_lead","id_nuevo","motivo"]` | 3 | Administrador | Traspaso con motivo obligatorio |
 | `HISTORIALASIGNACIONES["id_lead"]` | 1 | Personal del CRM | Consulta traza de auditoría |
 
 ---
