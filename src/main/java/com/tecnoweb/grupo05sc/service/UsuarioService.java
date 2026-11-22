@@ -74,7 +74,7 @@ public final class UsuarioService {
 
         String summary = "<p style='font-size:13px; color:#6a737b;'>Total de usuarios registrados en el sistema: <b>" + usuarios.size() + "</b></p>";
         String tableHtml = HtmlTemplate.table(headers, rows);
-        String html = HtmlTemplate.wrapContainer("Gestión de Usuarios (CU1 – Nataly)", "ADMIN", summary + tableHtml);
+        String html = HtmlTemplate.wrapContainer("Gestión de Usuarios", "ADMIN", summary + tableHtml);
 
         return CommandResult.success(Config.SUBJECT_PREFIX + " Listado de Usuarios", html);
     }

@@ -25,6 +25,8 @@ public final class CommandDispatcher {
 
     private final UsuarioService usuarioService = new UsuarioService();
     private final com.tecnoweb.grupo05sc.service.LeadService leadService = new com.tecnoweb.grupo05sc.service.LeadService();
+    private final com.tecnoweb.grupo05sc.service.AsignacionService asignacionService = new com.tecnoweb.grupo05sc.service.AsignacionService();
+    private final com.tecnoweb.grupo05sc.service.PipelineService pipelineService = new com.tecnoweb.grupo05sc.service.PipelineService();
 
     private static final List<String> COMANDOS_VALIDOS = Arrays.asList(
         "HELP", "AYUDA", "QUIENSOY",
@@ -362,19 +364,38 @@ public final class CommandDispatcher {
     }
 
     private CommandResult handleModuloAsignacion(ParsedCommand cmd, String fromEmail) throws Exception {
-        if (cmd.getName().equals("BOLSACOMUN")) {
-            return listarBolsaComunEnBD();
+        UsuarioAuth auth = SecurityContext.obtenerUsuario(fromEmail);
+        switch (cmd.getName()) {
+            case "BOLSACOMUN":
+                return asignacionService.listarBolsaComun(auth);
+            case "ASIGNARMANUAL":
+                return asignacionService.asignarManual(auth, cmd);
+            case "EJECUTARROUNDROBIN":
+                return asignacionService.ejecutarRoundRobin(auth);
+            case "TRANSFERIRLEAD":
+                return asignacionService.transferirLead(auth, cmd);
+            case "HISTORIALASIGNACIONES":
+                return asignacionService.historialAsignaciones(auth, cmd);
+            default:
+                throw new CommandException("Comando de asignacion no implementado: " + cmd.getName());
         }
-        return CommandResult.success(Config.SUBJECT_PREFIX + " " + cmd.getName(),
-            HtmlTemplate.successCard("Modulo Asignaciones (CU3 - Nicol)", "Comando " + cmd.getName() + " reconocido con exito.", "<p>Parametros recibidos: " + cmd.getParams() + "</p>"));
     }
 
     private CommandResult handleModuloKanban(ParsedCommand cmd, String fromEmail) throws Exception {
-        if (cmd.getName().equals("VERKANBAN") || cmd.getName().equals("VEREMBUDO")) {
-            return renderizarKanbanEnBD();
+        UsuarioAuth auth = SecurityContext.obtenerUsuario(fromEmail);
+        switch (cmd.getName()) {
+            case "VERKANBAN":
+            case "VEREMBUDO":
+                return pipelineService.verKanban(auth, cmd);
+            case "LEADSETAPA":
+                return pipelineService.leadsEtapa(auth, cmd);
+            case "MOVERETAPA":
+                return pipelineService.moverEtapa(auth, cmd);
+            case "MISLEADS":
+                return pipelineService.misLeads(auth);
+            default:
+                throw new CommandException("Comando de kanban no implementado: " + cmd.getName());
         }
-        return CommandResult.success(Config.SUBJECT_PREFIX + " " + cmd.getName(),
-            HtmlTemplate.successCard("Modulo Kanban (CU4 - Nicol)", "Comando " + cmd.getName() + " reconocido con exito.", "<p>Parametros recibidos: " + cmd.getParams() + "</p>"));
     }
 
     private CommandResult handleModuloPerdida(ParsedCommand cmd, String fromEmail) throws Exception {
@@ -395,74 +416,6 @@ public final class CommandDispatcher {
     private CommandResult handleModuloReportes(ParsedCommand cmd, String fromEmail) throws Exception {
         return CommandResult.success(Config.SUBJECT_PREFIX + " " + cmd.getName(),
             HtmlTemplate.successCard("Modulo Reportes y Estadisticas (CU8 - Jael)", "Comando " + cmd.getName() + " reconocido con exito.", "<p>Parametros recibidos: " + cmd.getParams() + "</p>"));
-    }
-
-    // =========================================================================
-    // CONSULTAS DIRECTAS A POSTGRESQL LOCAL
-    // =========================================================================
-
-    private CommandResult listarBolsaComunEnBD() throws Exception {
-        Connection conn = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        try {
-            conn = DatabaseConnection.getConnection();
-            ps = conn.prepareStatement("SELECT l.id_lead, l.nombre, l.telefono, l.correo, o.nombre as origen, l.created_at " +
-                                       "FROM leads l JOIN origenes_lead o ON l.id_origen = o.id_origen " +
-                                       "WHERE l.id_vendedor IS NULL ORDER BY l.created_at ASC");
-            rs = ps.executeQuery();
-            List<String[]> rows = new ArrayList<>();
-            while (rs.next()) {
-                rows.add(new String[]{
-                    String.valueOf(rs.getInt("id_lead")),
-                    rs.getString("nombre"),
-                    rs.getString("telefono"),
-                    rs.getString("correo") != null ? rs.getString("correo") : "-",
-                    rs.getString("origen"),
-                    rs.getString("created_at")
-                });
-            }
-            String[] headers = new String[]{"ID", "PROSPECTO", "TELEFONO", "CORREO", "CANAL ORIGEN", "REGISTRADO"};
-            String html = HtmlTemplate.wrapContainer("Bolsa Comun (Prospectos No Asignados)", "CU3", HtmlTemplate.table(headers, rows));
-            return CommandResult.success(Config.SUBJECT_PREFIX + " Bolsa Comun de Leads", html);
-        } finally {
-            DatabaseConnection.close(rs);
-            DatabaseConnection.close(ps);
-            DatabaseConnection.close(conn);
-        }
-    }
-
-    private CommandResult renderizarKanbanEnBD() throws Exception {
-        Connection conn = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        try {
-            conn = DatabaseConnection.getConnection();
-            String sql = "SELECT e.id_etapa, e.nombre as etapa, COUNT(l.id_lead) as total " +
-                         "FROM etapas_pipeline e LEFT JOIN leads l ON e.id_etapa = l.id_etapa " +
-                         "GROUP BY e.id_etapa, e.nombre, e.orden ORDER BY e.orden ASC";
-            ps = conn.prepareStatement(sql);
-            rs = ps.executeQuery();
-
-            List<String[]> rows = new ArrayList<>();
-            while (rs.next()) {
-                int idEtapa = rs.getInt("id_etapa");
-                String nombreEtapa = rs.getString("etapa");
-                int total = rs.getInt("total");
-                rows.add(new String[]{
-                    String.valueOf(idEtapa),
-                    HtmlTemplate.badgeEtapa(idEtapa, nombreEtapa),
-                    "<b>" + total + " leads</b>"
-                });
-            }
-            String[] headers = new String[]{"#", "ETAPA DEL EMBUDO", "TOTAL EN ETAPA"};
-            String html = HtmlTemplate.wrapContainer("Resumen Tablero Kanban (Pipeline Comercial)", "CU4", HtmlTemplate.table(headers, rows));
-            return CommandResult.success(Config.SUBJECT_PREFIX + " Tablero Kanban", html);
-        } finally {
-            DatabaseConnection.close(rs);
-            DatabaseConnection.close(ps);
-            DatabaseConnection.close(conn);
-        }
     }
 
     // =========================================================================

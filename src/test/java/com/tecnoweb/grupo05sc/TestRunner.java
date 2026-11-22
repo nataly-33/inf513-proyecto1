@@ -503,6 +503,222 @@ public class TestRunner {
             System.err.println("❌ TEST 25 EXCEPCIÓN: " + e.getMessage());
         }
 
+        // =============================================================
+        // PRUEBAS ESPECÍFICAS DE CU3: ASIGNACIÓN DE LEADS (NICOL)
+        // =============================================================
+
+        // -------------------------------------------------------------
+        // TEST 26: CU3 - BOLSACOMUN lista prospectos no asignados
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("admin@crm.bo", "BOLSACOMUN[]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Bolsa Comun de Prospectos")) {
+                System.out.println("✔ TEST 26 PASÓ: CU3 BOLSACOMUN devolvió tabla de prospectos en espera.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 26 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 26 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 27: CU3 - ASIGNARMANUAL asigna lead a vendedor #3
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadCreado > 0) {
+                String cmdAsig = "ASIGNARMANUAL[\"" + idLeadCreado + "\", \"3\", \"Asignacion inicial comercial\"]";
+                CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdAsig);
+                if (result.isSuccess() && result.getHtmlBody().contains("Asignacion Manual Exitosa")) {
+                    com.tecnoweb.grupo05sc.dao.LeadDao leadDao = new com.tecnoweb.grupo05sc.dao.LeadDao();
+                    com.tecnoweb.grupo05sc.dao.LeadDao.LeadDTO l = leadDao.buscarPorId(idLeadCreado);
+                    if (l != null && l.getIdVendedor() != null && l.getIdVendedor() == 3) {
+                        System.out.println("✔ TEST 27 PASÓ: CU3 ASIGNARMANUAL asignó el lead #" + idLeadCreado + " a Vendedor 1 (#3) con auditoría.");
+                        testsPassed++;
+                    } else {
+                        System.err.println("❌ TEST 27 FALLÓ: Vendedor no actualizado en BD.");
+                    }
+                } else {
+                    System.err.println("❌ TEST 27 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 27 OMITIDO: Falta idLeadCreado.");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 27 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 28: CU3 - ASIGNARMANUAL rechazado si el usuario no es vendedor (Coordinador #2)
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadCreado > 0) {
+                String cmdAsig = "ASIGNARMANUAL[\"" + idLeadCreado + "\", \"2\", \"Asignacion invalida\"]";
+                CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdAsig);
+                if (!result.isSuccess() && result.getHtmlBody().contains("solo pueden ser asignados a usuarios con rol 'Vendedor'")) {
+                    System.out.println("✔ TEST 28 PASÓ: CU3 ASIGNARMANUAL validó que el destinatario tenga rol 'Vendedor'.");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 28 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 28 OMITIDO: Falta idLeadCreado.");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 28 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 29: CU3 - TRANSFERIRLEAD reasigna lead a vendedor #4 con motivo
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadCreado > 0) {
+                String cmdTrans = "TRANSFERIRLEAD[\"" + idLeadCreado + "\", \"4\", \"Reasignacion por carga de trabajo\"]";
+                CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdTrans);
+                if (result.isSuccess() && result.getHtmlBody().contains("Transferencia de Prospecto")) {
+                    com.tecnoweb.grupo05sc.dao.LeadDao leadDao = new com.tecnoweb.grupo05sc.dao.LeadDao();
+                    com.tecnoweb.grupo05sc.dao.LeadDao.LeadDTO l = leadDao.buscarPorId(idLeadCreado);
+                    if (l != null && l.getIdVendedor() != null && l.getIdVendedor() == 4) {
+                        System.out.println("✔ TEST 29 PASÓ: CU3 TRANSFERIRLEAD transfirió el lead #" + idLeadCreado + " a Vendedor 2 (#4).");
+                        testsPassed++;
+                    } else {
+                        System.err.println("❌ TEST 29 FALLÓ: Lead no reasignado a vendedor 4.");
+                    }
+                } else {
+                    System.err.println("❌ TEST 29 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 29 OMITIDO: Falta idLeadCreado.");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 29 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 30: CU3 - HISTORIALASIGNACIONES despliega la traza de auditoría
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadCreado > 0) {
+                String cmdHist = "HISTORIALASIGNACIONES[\"" + idLeadCreado + "\"]";
+                CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdHist);
+                if (result.isSuccess() && result.getHtmlBody().contains("Auditoria de Asignaciones") && result.getHtmlBody().contains("TRANSFERENCIA")) {
+                    System.out.println("✔ TEST 30 PASÓ: CU3 HISTORIALASIGNACIONES mostró la traza cronológica de traspasos.");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 30 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 30 OMITIDO: Falta idLeadCreado.");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 30 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // =============================================================
+        // PRUEBAS ESPECÍFICAS DE CU4: EMBUDO KANBAN (NICOL)
+        // =============================================================
+
+        // -------------------------------------------------------------
+        // TEST 31: CU4 - VERKANBAN visualiza las 6 etapas
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("admin@crm.bo", "VERKANBAN[]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Tablero Kanban Comercial") && result.getHtmlBody().contains("En Contacto")) {
+                System.out.println("✔ TEST 31 PASÓ: CU4 VERKANBAN generó el tablero consolidado de 6 etapas.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 31 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 31 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 32: CU4 - LEADSETAPA consulta leads en Etapa 1 (Nuevo)
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("admin@crm.bo", "LEADSETAPA[\"1\"]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Columna Kanban: Nuevo")) {
+                System.out.println("✔ TEST 32 PASÓ: CU4 LEADSETAPA listó los prospectos de la etapa 'Nuevo'.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 32 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 32 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 33: CU4 - MOVERETAPA avanza lead de etapa 1 a 2 (En Contacto)
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadCreado > 0) {
+                String cmdMover = "MOVERETAPA[\"" + idLeadCreado + "\", \"2\"]";
+                CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdMover);
+                if (result.isSuccess() && result.getHtmlBody().contains("Etapa Comercial Actualizada") && result.getHtmlBody().contains("En Contacto")) {
+                    com.tecnoweb.grupo05sc.dao.LeadDao leadDao = new com.tecnoweb.grupo05sc.dao.LeadDao();
+                    com.tecnoweb.grupo05sc.dao.LeadDao.LeadDTO l = leadDao.buscarPorId(idLeadCreado);
+                    if (l != null && l.getIdEtapa() == 2) {
+                        System.out.println("✔ TEST 33 PASÓ: CU4 MOVERETAPA avanzó el lead #" + idLeadCreado + " a etapa 2 (En Contacto) y auditó en bitácora.");
+                        testsPassed++;
+                    } else {
+                        System.err.println("❌ TEST 33 FALLÓ: Etapa no actualizada en BD.");
+                    }
+                } else {
+                    System.err.println("❌ TEST 33 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 33 OMITIDO: Falta idLeadCreado.");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 33 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 34: CU4 - MOVERETAPA a Etapa 6 rechaza y exige MARCARPERDIDO
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            if (idLeadCreado > 0) {
+                String cmdMover = "MOVERETAPA[\"" + idLeadCreado + "\", \"6\"]";
+                CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdMover);
+                if (!result.isSuccess() && result.getHtmlBody().contains("MARCARPERDIDO")) {
+                    System.out.println("✔ TEST 34 PASÓ: CU4 Validó regla institucional -> Paso a etapa 6 exige tipificar motivo (MARCARPERDIDO).");
+                    testsPassed++;
+                } else {
+                    System.err.println("❌ TEST 34 FALLÓ: " + result.getHtmlBody());
+                }
+            } else {
+                System.err.println("❌ TEST 34 OMITIDO: Falta idLeadCreado.");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 34 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 35: CU4 - MISLEADS lista la cartera comercial del vendedor
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            CommandResult result = dispatcher.dispatch("vendedor1@crm.bo", "MISLEADS[]");
+            if (result.isSuccess() && result.getHtmlBody().contains("Mi Cartera de Prospectos")) {
+                System.out.println("✔ TEST 35 PASÓ: CU4 MISLEADS filtró la cartera personal del vendedor remitente.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 35 FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 35 EXCEPCIÓN: " + e.getMessage());
+        }
+
         // Limpieza final de prueba
         limpiarUsuarioPrueba("mariana.suarez@crm.bo");
         limpiarUsuarioPrueba("mariana.modificada@crm.bo");

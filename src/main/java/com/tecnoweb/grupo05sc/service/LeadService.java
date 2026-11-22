@@ -89,7 +89,7 @@ public final class LeadService {
                          "</table>" +
                          "<p style='font-size: 12px; color: #555555; margin-top: 10px;'>El prospecto ha sido ingresado exitosamente y registrado en la bitacora institucional.</p>";
 
-        String html = HtmlTemplate.successCard("Captacion de Prospecto (CU2 - Jael)", "Prospecto registrado satisfactoriamente en el CRM.", details);
+        String html = HtmlTemplate.successCard("Captacion de Prospecto", "Prospecto registrado satisfactoriamente en el CRM.", details);
         return CommandResult.success(Config.SUBJECT_PREFIX + " Prospecto #" + newLeadId + " Registrado", html);
     }
 

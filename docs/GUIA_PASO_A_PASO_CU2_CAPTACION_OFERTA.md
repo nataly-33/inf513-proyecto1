@@ -43,7 +43,7 @@
   ```
 * **Contenido HTML que Recibirás en tu Bandeja:**
   * Cabecera institucional azul marino: `CRM EDUCATIVO UNEXO`
-  * Tarjeta formal con título: `Captacion de Prospecto (CU2 - Jael)` y etiqueta `[EXITO]`
+  * Tarjeta formal con título: `Captacion de Prospecto` y etiqueta `[EXITO]`
   * Mensaje: `Prospecto registrado satisfactoriamente en el CRM.`
   * Ficha rectangular con campos:
     * **ID Prospecto:** #(ID_GENERADO)
