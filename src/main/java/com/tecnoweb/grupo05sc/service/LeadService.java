@@ -118,7 +118,22 @@ public final class LeadService {
             );
         }
 
-        Long idProfesion = !profesion.isEmpty() ? leadDao.obtenerIdProfesionPorNombre(profesion) : null;
+        Long idProfesion = null;
+        if (!profesion.isEmpty()) {
+            idProfesion = leadDao.obtenerIdProfesionPorNombre(profesion);
+            if (idProfesion == null) {
+                List<LeadDao.CatalogoDTO> profs = leadDao.listarProfesiones();
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < profs.size(); i++) {
+                    if (i > 0) sb.append(", ");
+                    sb.append(profs.get(i).getNombre());
+                }
+                throw new CommandException(
+                    "La profesion '" + profesion + "' no coincide con ninguna del catalogo.",
+                    "Profesiones disponibles: " + sb.toString() + ". Ingrese una profesion valida (ej. 'Sistemas', 'Informatica', 'Derecho') o consulte con LISTARPROFESIONES[]."
+                );
+            }
+        }
         long createdBy = (auth != null) ? auth.getIdUsuario() : 1L; // 1 = Admin por defecto si es invitado
 
         long newLeadId = leadDao.insertarLead(nombre, cleanPhone, correo, idOrigen, idProfesion, createdBy);

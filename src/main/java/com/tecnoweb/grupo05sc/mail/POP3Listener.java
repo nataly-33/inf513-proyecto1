@@ -2,13 +2,18 @@ package com.tecnoweb.grupo05sc.mail;
 
 import com.tecnoweb.grupo05sc.config.Config;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Lector de correos entrantes mediante protocolo POP3 (RFC 1939) sobre Sockets TCP puros.
@@ -172,40 +177,149 @@ public final class POP3Listener {
 
     /**
      * Parsea el texto crudo del correo separando cabeceras RFC 5322 del cuerpo del mensaje.
+     * Implementa:
+     *   - RFC 2822 / RFC 5322 Section 2.2.3 Header Unfolding (despliega lineas continuadas que inician con espacio o tab).
+     *   - RFC 2047 MIME Encoded-Word Decoding (=?UTF-8?B?...?= y =?UTF-8?Q?...?=) para soportar acentos y caracteres especiales.
      */
-    private static MailMessage parseRawEmail(int messageNumber, String uid, String raw) {
+    public static MailMessage parseRawEmail(int messageNumber, String uid, String raw) {
         String[] lines = raw.split("\n");
-        String subject = "";
-        String rawFrom = "";
-        String fromEmail = "";
-        String date = "";
+        List<String> headerLines = new ArrayList<>();
+        StringBuilder currentHeader = null;
+        boolean inHeaders = true;
         StringBuilder bodyBuilder = new StringBuilder();
 
-        boolean inHeaders = true;
-
-        for (String line : lines) {
+        for (String rawLine : lines) {
+            String line = rawLine.endsWith("\r") ? rawLine.substring(0, rawLine.length() - 1) : rawLine;
             if (inHeaders) {
                 // Una linea en blanco marca el fin de las cabeceras
                 if (line.trim().isEmpty()) {
+                    if (currentHeader != null) {
+                        headerLines.add(currentHeader.toString());
+                        currentHeader = null;
+                    }
                     inHeaders = false;
                     continue;
                 }
 
-                String lower = line.toLowerCase();
-                if (lower.startsWith("subject:")) {
-                    subject = line.substring(8).trim();
-                } else if (lower.startsWith("from:")) {
-                    rawFrom = line.substring(5).trim();
-                    fromEmail = extractEmailAddress(rawFrom);
-                } else if (lower.startsWith("date:")) {
-                    date = line.substring(5).trim();
+                // Despliegue de cabeceras plegadas (Header Unfolding - RFC 2822 Seccion 2.2.3)
+                // Si la linea comienza con espacio ' ' o tabulador '\t', es continuacion de la cabecera anterior.
+                if ((line.startsWith(" ") || line.startsWith("\t")) && currentHeader != null) {
+                    currentHeader.append(" ").append(line.trim());
+                } else {
+                    if (currentHeader != null) {
+                        headerLines.add(currentHeader.toString());
+                    }
+                    currentHeader = new StringBuilder(line);
                 }
             } else {
-                bodyBuilder.append(line).append("\n");
+                bodyBuilder.append(rawLine).append("\n");
+            }
+        }
+        if (currentHeader != null) {
+            headerLines.add(currentHeader.toString());
+        }
+
+        String subject = "";
+        String rawFrom = "";
+        String fromEmail = "";
+        String date = "";
+
+        for (String header : headerLines) {
+            String lower = header.toLowerCase();
+            if (lower.startsWith("subject:")) {
+                subject = header.substring(8).trim();
+                subject = decodeRFC2047(subject);
+            } else if (lower.startsWith("from:")) {
+                rawFrom = header.substring(5).trim();
+                rawFrom = decodeRFC2047(rawFrom);
+                fromEmail = extractEmailAddress(rawFrom);
+            } else if (lower.startsWith("date:")) {
+                date = header.substring(5).trim();
+            }
+        }
+
+        // Respaldo de seguridad: si el asunto viene vacio pero el cuerpo inicia con un comando
+        if (subject.isEmpty() && !bodyBuilder.toString().trim().isEmpty()) {
+            String firstLine = bodyBuilder.toString().trim().split("\n")[0].trim();
+            if (firstLine.matches("^[A-Za-z0-9_]+\\s*(\\[.*\\])?$")) {
+                subject = firstLine;
             }
         }
 
         return new MailMessage(messageNumber, uid, fromEmail, rawFrom, subject, bodyBuilder.toString().trim(), date);
+    }
+
+    /**
+     * Decodifica palabras codificadas segun RFC 2047 (=?charset?encoding?encoded_text?=).
+     * Soporta Base64 ('B') y Quoted-Printable ('Q'), uniendo fragmentos adyacentes
+     * e ignorando espacios lineales intermedios segun la Seccion 6.2 del RFC.
+     */
+    public static String decodeRFC2047(String text) {
+        if (text == null || !text.contains("=?")) {
+            return text;
+        }
+
+        try {
+            // Eliminar espacios lineales entre encoded-words adyacentes segun RFC 2047 Seccion 6.2
+            String cleaned = text.replaceAll("(?i)(\\?=\\s+=\\?)", "?==?");
+
+            Pattern p = Pattern.compile("=\\?([^?]+)\\?([BbQq])\\?([^?]+)\\?=");
+            Matcher m = p.matcher(cleaned);
+            StringBuffer sb = new StringBuffer();
+
+            while (m.find()) {
+                String charsetName = m.group(1);
+                String encoding = m.group(2).toUpperCase();
+                String encodedData = m.group(3);
+
+                Charset charset;
+                try {
+                    charset = Charset.forName(charsetName);
+                } catch (Exception e) {
+                    charset = StandardCharsets.UTF_8;
+                }
+
+                String decodedPart;
+                if ("B".equals(encoding)) {
+                    byte[] bytes = Base64.getDecoder().decode(encodedData.trim());
+                    decodedPart = new String(bytes, charset);
+                } else if ("Q".equals(encoding)) {
+                    byte[] bytes = decodeQuotedPrintable(encodedData);
+                    decodedPart = new String(bytes, charset);
+                } else {
+                    decodedPart = m.group(0);
+                }
+
+                m.appendReplacement(sb, Matcher.quoteReplacement(decodedPart));
+            }
+            m.appendTail(sb);
+            return sb.toString();
+        } catch (Exception e) {
+            SocketLogger.error("[POP3] Excepcion al decodificar RFC 2047 (" + text + "): " + e.getMessage());
+            return text;
+        }
+    }
+
+    private static byte[] decodeQuotedPrintable(String s) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '_') {
+                baos.write(' ');
+            } else if (c == '=' && i + 2 < s.length()) {
+                String hex = s.substring(i + 1, i + 3);
+                try {
+                    int b = Integer.parseInt(hex, 16);
+                    baos.write(b);
+                    i += 2;
+                } catch (NumberFormatException e) {
+                    baos.write('=');
+                }
+            } else {
+                baos.write((byte) c);
+            }
+        }
+        return baos.toByteArray();
     }
 
     /**

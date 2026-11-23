@@ -14,3 +14,7 @@ target/
 # Archivos del sistema
 .DS_Store
 Thumbs.db
+
+db/backup_practicos_u4.sql
+
+.env

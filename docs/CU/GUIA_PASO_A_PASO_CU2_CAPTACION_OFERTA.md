@@ -50,7 +50,7 @@
     * **Teléfono de Contacto:** 70011223
     * **Correo Electrónico:** `mario.becerra@gmail.com`
     * **Canal de Origen:** Facebook
-    * **Área / Profesión:** Ingeniería de Sistemas / Software
+    * **Área / Profesión:** Ingenieria de Sistemas
     * **Etapa Inicial:** `Nuevo` *(Badge azul)*
     * **Estado de Asignación:** `Bolsa Comun (Pendiente de Vendedor)`
 * **Consulta SQL para Comprobar en PostgreSQL:**

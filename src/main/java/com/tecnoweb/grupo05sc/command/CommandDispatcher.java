@@ -256,7 +256,7 @@ public final class CommandDispatcher {
         sb.append(HtmlTemplate.table(headers, rows));
         sb.append("<p style='font-size: 12px; color: #666666; margin-top: 8px;'>Para consultar la sintaxis y parametros de un comando particular, envie: <code>HELP[\"NOMBRE_COMANDO\"]</code>.</p>");
 
-        String html = HtmlTemplate.wrapContainer("Catalogo Integral de Comandos del Sistema", "GUIA OFICIAL", sb.toString());
+        String html = HtmlTemplate.wrapContainer("Catalogo Oficial de Comandos del Sistema", "GUIA OFICIAL", sb.toString());
         return CommandResult.success(Config.SUBJECT_PREFIX + " Guia de Comandos (HELP)", html);
     }
 

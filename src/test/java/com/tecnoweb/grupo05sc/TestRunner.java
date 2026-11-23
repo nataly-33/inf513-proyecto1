@@ -552,15 +552,15 @@ public class TestRunner {
         }
 
         // -------------------------------------------------------------
-        // TEST 28: CU3 - ASIGNARMANUAL rechazado si el usuario no es vendedor (Coordinador #2)
+        // TEST 28: CU3 - ASIGNARMANUAL bloqueado si el lead ya tiene vendedor asignado (exige TRANSFERIRLEAD)
         // -------------------------------------------------------------
         totalTests++;
         try {
             if (idLeadCreado > 0) {
-                String cmdAsig = "ASIGNARMANUAL[\"" + idLeadCreado + "\", \"2\", \"Asignacion invalida\"]";
-                CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdAsig);
-                if (!result.isSuccess() && result.getHtmlBody().contains("solo pueden ser asignados a usuarios con rol 'Vendedor'")) {
-                    System.out.println("✔ TEST 28 PASÓ: CU3 ASIGNARMANUAL validó que el destinatario tenga rol 'Vendedor'.");
+                String cmdAsigYaTiene = "ASIGNARMANUAL[\"" + idLeadCreado + "\", \"4\", \"Intento de sobreasignacion\"]";
+                CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdAsigYaTiene);
+                if (!result.isSuccess() && result.getHtmlBody().contains("ya se encuentra asignado") && result.getHtmlBody().contains("TRANSFERIRLEAD")) {
+                    System.out.println("✔ TEST 28 PASÓ: CU3 ASIGNARMANUAL bloqueó reasignación directa sobre lead ya asignado (exige TRANSFERIRLEAD).");
                     testsPassed++;
                 } else {
                     System.err.println("❌ TEST 28 FALLÓ: " + result.getHtmlBody());
@@ -570,6 +570,23 @@ public class TestRunner {
             }
         } catch (Exception e) {
             System.err.println("❌ TEST 28 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 28B: CU3 - ASIGNARMANUAL rechazado si destinatario no es Vendedor (Coordinador #2)
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            String cmdAsigCoord = "ASIGNARMANUAL[\"1\", \"2\", \"Asignacion invalida\"]";
+            CommandResult result = dispatcher.dispatch("admin@crm.bo", cmdAsigCoord);
+            if (!result.isSuccess() && result.getHtmlBody().contains("solo pueden ser asignados a usuarios con rol 'Vendedor'")) {
+                System.out.println("✔ TEST 28B PASÓ: CU3 ASIGNARMANUAL validó que el destinatario tenga rol 'Vendedor'.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 28B FALLÓ: " + result.getHtmlBody());
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 28B EXCEPCIÓN: " + e.getMessage());
         }
 
         // -------------------------------------------------------------
@@ -1779,6 +1796,91 @@ public class TestRunner {
             }
         } catch (Exception e) {
             System.err.println("❌ TEST 84 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 85: RFC 2822 Header Unfolding (Despliegue de Asuntos cortados por Gmail)
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            String rawEmail = "From: Raysa <raysa@gmail.com>\n" +
+                              "Subject: REGISTRARPROSPECTO[\"Raysa Sanchez\",\"72115304\",\"morita@gmail.com\",\"Facebook\",\"Ingenieria\n" +
+                              " en Sistemas\"]\n" +
+                              "Date: Mon, 23 Nov 2026 11:30:00 -0400\n\n" +
+                              "Cuerpo de prueba";
+            com.tecnoweb.grupo05sc.mail.MailMessage mm = com.tecnoweb.grupo05sc.mail.POP3Listener.parseRawEmail(1, "1", rawEmail);
+            String esperado = "REGISTRARPROSPECTO[\"Raysa Sanchez\",\"72115304\",\"morita@gmail.com\",\"Facebook\",\"Ingenieria en Sistemas\"]";
+            if (mm.getSubject().equals(esperado)) {
+                System.out.println("✔ TEST 85 PASÓ: RFC 2822 Header Unfolding recompuso correctamente el asunto plegado por Gmail.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 85 FALLÓ: Asunto obtenido: [" + mm.getSubject() + "], esperado: [" + esperado + "]");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 85 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 86: RFC 2047 MIME Encoded-Word Decoding (Base64 UTF-8)
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            String encodedSubject = "=?UTF-8?B?UkVHSVNUUkFSUFJPU1BFQ1RPWyJJdmFubmEgTSIsIjcyMTE1MzAzIiwiaXZhbm5hLnBvdA==?= =?UTF-8?B?ZXJpY2FAZ21haWwuY29tIiwiRmFjZWJvb2siLCJJbmdlbmllcsOtYSBkZSBTaXN0ZW1hcyAvIFNvZnR3YXJlIl0=?=";
+            String decoded = com.tecnoweb.grupo05sc.mail.POP3Listener.decodeRFC2047(encodedSubject);
+            String esperado = "REGISTRARPROSPECTO[\"Ivanna M\",\"72115303\",\"ivanna.poterica@gmail.com\",\"Facebook\",\"Ingeniería de Sistemas / Software\"]";
+            if (decoded.equals(esperado)) {
+                System.out.println("✔ TEST 86 PASÓ: RFC 2047 decodificó múltiples bloques Base64 UTF-8 eliminando espacios lineales intermedios.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 86 FALLÓ: Decodificado: [" + decoded + "], esperado: [" + esperado + "]");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 86 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 87: Normalización de comillas tipográficas de Google Docs / Word
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            String docsSubject = "REGISTRARPROSPECTO[“Raysa Sanchez”, “72115304”, “morita@gmail.com”, “Facebook”, “Ingenieria en Sistemas”]";
+            ParsedCommand parsed = CommandParser.parse(docsSubject);
+            if (parsed.getName().equals("REGISTRARPROSPECTO") && parsed.paramCount() == 5 &&
+                parsed.getParam(0).equals("Raysa Sanchez") && parsed.getParam(4).equals("Ingenieria en Sistemas")) {
+                System.out.println("✔ TEST 87 PASÓ: CommandParser normalizó comillas tipográficas “...” de Google Docs a ASCII puro.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 87 FALLÓ: " + parsed);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 87 EXCEPCIÓN: " + e.getMessage());
+        }
+
+        // -------------------------------------------------------------
+        // TEST 88: Resolución flexible de profesión y validación de catálogo
+        // -------------------------------------------------------------
+        totalTests++;
+        try {
+            com.tecnoweb.grupo05sc.dao.LeadDao dao = new com.tecnoweb.grupo05sc.dao.LeadDao();
+            Long id1 = dao.obtenerIdProfesionPorNombre("Ingenieria en Sistemas");
+            Long id2 = dao.obtenerIdProfesionPorNombre("Ing. Sistemas");
+            Long id3 = dao.obtenerIdProfesionPorNombre("Sistemas");
+            Long id4 = dao.obtenerIdProfesionPorNombre("Software");
+            Long idInvalido = dao.obtenerIdProfesionPorNombre("Astronauta");
+
+            boolean okFlexible = (id1 != null && id1 == 1L && id2 != null && id2 == 1L && id3 != null && id3 == 1L && id4 != null && id4 == 1L && idInvalido == null);
+
+            CommandResult rInvalido = dispatcher.dispatch("admin@crm.bo", "REGISTRARPROSPECTO[\"Carlos\",\"71112233\",\"c@test.bo\",\"Web\",\"Astronauta\"]");
+            boolean okRechazo = !rInvalido.isSuccess() && rInvalido.getHtmlBody().contains("LISTARPROFESIONES[]");
+
+            if (okFlexible && okRechazo) {
+                System.out.println("✔ TEST 88 PASÓ: Resolución flexible de profesiones ('Ingenieria en Sistemas' -> 1) y validación ante profesión inexistente.");
+                testsPassed++;
+            } else {
+                System.err.println("❌ TEST 88 FALLÓ: okFlexible=" + okFlexible + ", okRechazo=" + okRechazo);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ TEST 88 EXCEPCIÓN: " + e.getMessage());
         }
 
         // Limpieza final de prueba

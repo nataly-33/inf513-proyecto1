@@ -100,6 +100,14 @@ public final class AsignacionService {
             throw new CommandException("No existe ningun prospecto registrado con el ID #" + idLead + ".");
         }
 
+        if (lead.getIdVendedor() != null) {
+            throw new CommandException(
+                "El prospecto #" + idLead + " (" + lead.getNombre() + ") ya se encuentra asignado a un ejecutivo de ventas (" +
+                (lead.getVendedorNombre() != null ? lead.getVendedorNombre() : "Vendedor #" + lead.getIdVendedor()) + ").",
+                "Para reasignar o transferir este prospecto a otro vendedor, utilice el comando: TRANSFERIRLEAD[\"" + idLead + "\", \"id_nuevo_vendedor\", \"motivo\"]."
+            );
+        }
+
         UsuarioDao.UsuarioDTO vendedor = usuarioDao.buscarPorId(idVendedor);
         if (vendedor == null) {
             throw new CommandException("No existe ningun usuario registrado con el ID #" + idVendedor + ".");
@@ -222,6 +230,20 @@ public final class AsignacionService {
         LeadDao.LeadDTO lead = leadDao.buscarPorId(idLead);
         if (lead == null) {
             throw new CommandException("No existe ningun prospecto registrado con el ID #" + idLead + ".");
+        }
+
+        if (lead.getIdVendedor() == null) {
+            throw new CommandException(
+                "El prospecto #" + idLead + " (" + lead.getNombre() + ") no tiene vendedor asignado (se encuentra en la Bolsa Comun).",
+                "Utilice el comando: ASIGNARMANUAL[\"" + idLead + "\", \"id_vendedor\", \"motivo\"] para asignarlo por primera vez."
+            );
+        }
+
+        if (lead.getIdVendedor() != null && lead.getIdVendedor().equals(idNuevoVendedor)) {
+            throw new CommandException(
+                "El prospecto #" + idLead + " ya se encuentra asignado a este mismo vendedor.",
+                "Seleccione un ejecutivo de ventas diferente para realizar la transferencia."
+            );
         }
 
         UsuarioDao.UsuarioDTO nuevoVend = usuarioDao.buscarPorId(idNuevoVendedor);

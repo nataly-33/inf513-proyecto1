@@ -338,7 +338,19 @@ public final class LeadDao {
     }
 
     /**
+     * Normaliza cadenas de texto eliminando acentos, caracteres especiales, y exceso de espacios.
+     */
+    public static String normalizeText(String s) {
+        if (s == null) return "";
+        return s.toLowerCase()
+                .replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
+                .replace('ñ', 'n').replace('/', ' ').replace('-', ' ').replace('.', ' ').replace(',', ' ')
+                .replaceAll("\\s+", " ").trim();
+    }
+
+    /**
      * Valida si un canal de origen existe en la base de datos (por ID o por nombre).
+     * Soporta coincidencias flexibles sin distincion de mayusculas ni acentos.
      * Devuelve el id_origen correspondiente, o null si no existe.
      */
     public Long buscarIdOrigen(String origen) throws SQLException {
@@ -365,23 +377,16 @@ public final class LeadDao {
             }
         }
 
-        // 2. Buscar por nombre exacto o aproximado
-        String sql = "SELECT id_origen FROM origenes_lead WHERE LOWER(TRIM(nombre)) = LOWER(TRIM(?)) OR LOWER(nombre) LIKE ? ORDER BY id_origen ASC LIMIT 1";
-        Connection conn = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        try {
-            conn = DatabaseConnection.getConnection();
-            ps = conn.prepareStatement(sql);
-            ps.setString(1, clean);
-            ps.setString(2, "%" + clean.toLowerCase() + "%");
-            rs = ps.executeQuery();
-            if (rs.next()) return rs.getLong("id_origen");
-        } finally {
-            DatabaseConnection.close(rs);
-            DatabaseConnection.close(ps);
-            DatabaseConnection.close(conn);
+        // 2. Coincidencia flexible contra catalogo de origenes
+        String inputNorm = normalizeText(clean);
+        List<CatalogoDTO> todos = listarOrigenes();
+        for (CatalogoDTO cat : todos) {
+            String dbNorm = normalizeText(cat.getNombre());
+            if (dbNorm.equals(inputNorm) || dbNorm.contains(inputNorm) || inputNorm.contains(dbNorm)) {
+                return cat.getId();
+            }
         }
+
         return null; // No existe
     }
 
@@ -420,32 +425,48 @@ public final class LeadDao {
     }
 
     /**
-     * Resuelve el id_profesion a partir de una cadena (ej. "Sistemas", "Derecho", "Auditoria").
+     * Resuelve el id_profesion de forma inteligente y resiliente a partir de cualquier cadena
+     * ingresada por el usuario (ej. "Ingenieria en Sistemas", "Ing. Sistemas", "Sistemas", "Auditoria", "Derecho").
      */
     public Long obtenerIdProfesionPorNombre(String profesion) throws SQLException {
         if (profesion == null || profesion.trim().isEmpty()) return null;
-        String clean = profesion.trim().toLowerCase();
+        String inputNorm = normalizeText(profesion);
+        if (inputNorm.isEmpty()) return null;
 
-        String sql = "SELECT id_profesion FROM profesiones WHERE LOWER(nombre) LIKE ? LIMIT 1";
+        List<CatalogoDTO> todas = listarProfesiones();
 
-        Connection conn = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-
-        try {
-            conn = DatabaseConnection.getConnection();
-            ps = conn.prepareStatement(sql);
-            ps.setString(1, "%" + clean + "%");
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getLong("id_profesion");
+        // 1. Coincidencia directa o contenida normalizada
+        for (CatalogoDTO cat : todas) {
+            String dbNorm = normalizeText(cat.getNombre());
+            if (dbNorm.equals(inputNorm) || dbNorm.contains(inputNorm) || inputNorm.contains(dbNorm)) {
+                return cat.getId();
             }
-            return null;
-        } finally {
-            DatabaseConnection.close(rs);
-            DatabaseConnection.close(ps);
-            DatabaseConnection.close(conn);
         }
+
+        // 2. Coincidencia por palabras clave representativas (ignorando conectores y abreviaturas comunes)
+        String[] tokens = inputNorm.split(" ");
+        for (CatalogoDTO cat : todas) {
+            String dbNorm = normalizeText(cat.getNombre());
+            for (String token : tokens) {
+                if (token.equals("de") || token.equals("en") || token.equals("la") ||
+                    token.equals("el") || token.equals("y") || token.equals("ing") ||
+                    token.equals("lic") || token.length() < 3) {
+                    continue;
+                }
+                if (dbNorm.contains(token)) {
+                    return cat.getId();
+                }
+            }
+        }
+
+        // 3. Mapeo de terminos genericos o sinonimos comunes
+        if (inputNorm.contains("abogad")) return 6L; // Derecho
+        if (inputNorm.contains("medic") || inputNorm.contains("doctor")) return 7L; // Medicina
+        if (inputNorm.contains("profesor") || inputNorm.contains("docente") || inputNorm.contains("maestr")) return 8L; // Educacion
+        if (inputNorm.contains("colegio")) return 10L; // Bachiller
+        if (inputNorm.contains("ingenier")) return 1L; // Por defecto ingenieria si no se especifico otra rama
+
+        return null;
     }
 
     private static LeadDTO mapLead(ResultSet rs) throws SQLException {

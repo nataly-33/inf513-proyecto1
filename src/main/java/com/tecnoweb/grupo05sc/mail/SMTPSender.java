@@ -89,16 +89,26 @@ public final class SMTPSender {
             // 6. Transmision del mensaje (Cabeceras RFC 5322 + Linea en blanco + Cuerpo HTML)
             // Codificacion segura Base64 del Asunto segun RFC 2047
             String encodedSubject = "=?UTF-8?B?" + Base64.getEncoder().encodeToString(subject.getBytes(StandardCharsets.UTF_8)) + "?=";
+            String rfcDate = java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME.format(java.time.ZonedDateTime.now(java.time.ZoneId.of("America/La_Paz")));
+            String messageId = "<" + System.currentTimeMillis() + "." + java.util.UUID.randomUUID().toString().substring(0, 8) + "@" + Config.MAIL_HOST + ">";
 
             StringBuilder rfcMessage = new StringBuilder();
-            rfcMessage.append("From: ").append(Config.MAIL_EMISOR).append("\r\n");
+            rfcMessage.append("Date: ").append(rfcDate).append("\r\n");
+            rfcMessage.append("Message-ID: ").append(messageId).append("\r\n");
+            rfcMessage.append("From: \"CRM Educativo UNEXO\" <").append(Config.MAIL_EMISOR).append(">\r\n");
+            rfcMessage.append("Reply-To: <").append(Config.MAIL_EMISOR).append(">\r\n");
             rfcMessage.append("To: <").append(toEmail.trim()).append(">\r\n");
             rfcMessage.append("Subject: ").append(encodedSubject).append("\r\n");
             rfcMessage.append("MIME-Version: 1.0\r\n");
             rfcMessage.append("Content-Type: text/html; charset=UTF-8\r\n");
             rfcMessage.append("Content-Transfer-Encoding: 8bit\r\n");
+            rfcMessage.append("X-Mailer: CRM-Educativo-UNEXO/1.0\r\n");
+            rfcMessage.append("Auto-Submitted: auto-replied\r\n");
             rfcMessage.append("\r\n"); // Linea en blanco que separa cabeceras del cuerpo (OBLIGATORIA)
-            rfcMessage.append(htmlContent).append("\r\n");
+            rfcMessage.append(wrapLinesSafe(htmlContent));
+            if (!rfcMessage.toString().endsWith("\r\n")) {
+                rfcMessage.append("\r\n");
+            }
             rfcMessage.append(".\r\n"); // Fin del bloque DATA: <CRLF>.<CRLF>
 
             SocketLogger.client("[Cabeceras MIME y cuerpo HTML]");
@@ -129,5 +139,40 @@ public final class SMTPSender {
             try { if (in != null) in.close(); } catch (Exception ignored) {}
             try { if (socket != null && !socket.isClosed()) socket.close(); } catch (Exception ignored) {}
         }
+    }
+
+    /**
+     * Asegura que ninguna linea del cuerpo HTML supere los 850 caracteres (RFC 5322 fija maximo 998).
+     * Evita que los servidores de correo (Postfix/Sendmail) inserten forzadamente '!\n'
+     * en mitad de una celda de tabla o texto.
+     */
+    private static String wrapLinesSafe(String text) {
+        if (text == null) return "";
+        StringBuilder sb = new StringBuilder();
+        String[] lines = text.split("\r?\n");
+        for (String line : lines) {
+            if (line.length() <= 850) {
+                sb.append(line).append("\r\n");
+            } else {
+                int start = 0;
+                while (start < line.length()) {
+                    int end = Math.min(start + 800, line.length());
+                    if (end < line.length()) {
+                        int lastTag = line.lastIndexOf('>', end);
+                        if (lastTag > start + 200) {
+                            end = lastTag + 1;
+                        } else {
+                            int lastSpace = line.lastIndexOf(' ', end);
+                            if (lastSpace > start + 200) {
+                                end = lastSpace + 1;
+                            }
+                        }
+                    }
+                    sb.append(line, start, end).append("\r\n");
+                    start = end;
+                }
+            }
+        }
+        return sb.toString();
     }
 }

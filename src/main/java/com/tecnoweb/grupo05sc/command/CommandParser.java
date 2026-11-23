@@ -24,6 +24,7 @@ public final class CommandParser {
 
     /**
      * Parsea la línea de asunto extrayendo el nombre del comando y sus parámetros.
+     * Normaliza comillas tipográficas de procesadores como Google Docs / Word.
      */
     public static ParsedCommand parse(String subject) throws CommandException {
         if (subject == null || subject.trim().isEmpty()) {
@@ -33,7 +34,7 @@ public final class CommandParser {
             );
         }
 
-        String trimmed = subject.trim();
+        String trimmed = normalizeInput(subject.trim());
 
         // 1. Caso estándar: COMANDO[...]
         Matcher matcher = PATTERN_WITH_BRACKETS.matcher(trimmed);
@@ -55,6 +56,28 @@ public final class CommandParser {
             "Sintaxis de comando no reconocida: \"" + trimmed + "\".",
             "El formato esperado es: COMANDO[\"param1\", \"param2\"] o COMANDO[]. Ejemplo: LISPER[\"*\"] o HELP[]."
         );
+    }
+
+    /**
+     * Normaliza comillas tipográficas (Google Docs, Word, teclados móviles) a comillas estándar ASCII,
+     * y reemplaza espacios de no separación por espacios convencionales.
+     */
+    public static String normalizeInput(String s) {
+        if (s == null) return "";
+        return s.replace('\u201c', '"') // Comilla doble izquierda “
+                .replace('\u201d', '"') // Comilla doble derecha ”
+                .replace('\u201e', '"') // Comilla doble inferior „
+                .replace('\u00ab', '"') // Comilla angular izquierda «
+                .replace('\u00bb', '"') // Comilla angular derecha »
+                .replace('\u300c', '"') // Comilla CJK 「
+                .replace('\u300d', '"') // Comilla CJK 」
+                .replace('\u2018', '\'') // Comilla simple izquierda ‘
+                .replace('\u2019', '\'') // Comilla simple derecha ’
+                .replace('\u201a', '\'') // Comilla simple inferior ‚
+                .replace('\u00b4', '\'') // Acento agudo tipografico ´
+                .replace('\u00a0', ' ')  // Espacio de no separacion (NBSP)
+                .replace("\u200b", "")   // Espacio de ancho cero
+                .replace("\ufeff", "");  // Byte Order Mark (BOM)
     }
 
     /**

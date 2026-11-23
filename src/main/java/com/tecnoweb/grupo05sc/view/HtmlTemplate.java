@@ -56,33 +56,33 @@ public final class HtmlTemplate {
           .append(HEADER_SUBTITLE).append("</div>");
         sb.append("        </td>");
         if (badgeText != null && !badgeText.trim().isEmpty()) {
-            sb.append("        <td style='text-align: right; vertical-align: middle;'>");
+            sb.append("        <td style='text-align: right; vertical-align: middle;'>\r\n");
             sb.append("          <span style='background: ").append(COLOR_ACCENT)
               .append("; color: #ffffff; padding: 4px 10px; font-size: 11px; font-weight: bold; text-transform: uppercase;'>")
-              .append(badgeText).append("</span>");
-            sb.append("        </td>");
+              .append(badgeText.trim()).append("</span>\r\n");
+            sb.append("        </td>\r\n");
         }
-        sb.append("      </tr></table>");
-        sb.append("    </div>");
+        sb.append("      </tr></table>\r\n");
+        sb.append("    </div>\r\n");
 
         // Cuerpo de contenido
-        sb.append("    <div style='padding: 22px;'>");
+        sb.append("    <div style='padding: 22px;'>\r\n");
         if (title != null && !title.trim().isEmpty()) {
             sb.append("      <h3 style='color: ").append(COLOR_PRIMARY)
               .append("; margin-top: 0; margin-bottom: 14px; font-size: 16px; border-bottom: 1px solid ").append(COLOR_BORDER)
-              .append("; padding-bottom: 6px;'>").append(title).append("</h3>");
+              .append("; padding-bottom: 6px;'>").append(title).append("</h3>\r\n");
         }
-        sb.append(contentHtml);
-        sb.append("    </div>");
+        sb.append(contentHtml).append("\r\n");
+        sb.append("    </div>\r\n");
 
         // Pie de pagina
         sb.append("    <div style='background: #f0f0f0; padding: 10px 22px; border-top: 1px solid ").append(COLOR_BORDER)
-          .append("; font-size: 11px; color: #555555; text-align: center;'>");
-        sb.append("      ").append(FOOTER_TEXT);
-        sb.append("    </div>");
+          .append("; font-size: 11px; color: #555555; text-align: center;'>\r\n");
+        sb.append("      ").append(FOOTER_TEXT).append("\r\n");
+        sb.append("    </div>\r\n");
 
-        sb.append("  </div>");
-        sb.append("</body></html>");
+        sb.append("  </div>\r\n");
+        sb.append("</body></html>\r\n");
         return sb.toString();
     }
 
@@ -92,14 +92,14 @@ public final class HtmlTemplate {
     public static String errorCard(String errorMessage, String helpTip) {
         StringBuilder sb = new StringBuilder();
         sb.append("<div style='background: #fdf7f7; border: 1px solid ").append(COLOR_DANGER)
-          .append("; border-left: 5px solid ").append(COLOR_DANGER).append("; padding: 14px; margin-bottom: 14px;'>");
+          .append("; border-left: 5px solid ").append(COLOR_DANGER).append("; padding: 14px; margin-bottom: 14px;'>\r\n");
         sb.append("  <p style='color: ").append(COLOR_DANGER)
-          .append("; font-weight: bold; margin: 0 0 6px 0; font-size: 14px;'>[ERROR] ").append(errorMessage).append("</p>");
+          .append("; font-weight: bold; margin: 0 0 6px 0; font-size: 14px;'>[ERROR] ").append(errorMessage).append("</p>\r\n");
         if (helpTip != null && !helpTip.trim().isEmpty()) {
-            sb.append("  <p style='color: #444444; font-size: 13px; margin: 0;'><b>Sugerencia:</b> ").append(helpTip).append("</p>");
+            sb.append("  <p style='color: #444444; font-size: 13px; margin: 0;'><b>Sugerencia:</b> ").append(helpTip).append("</p>\r\n");
         }
-        sb.append("</div>");
-        sb.append("<p style='font-size: 12px; color: #555555; margin: 8px 0 0 0;'>Para consultar la sintaxis valida de cada comando, envie <b>HELP[]</b> en el asunto.</p>");
+        sb.append("</div>\r\n");
+        sb.append("<p style='font-size: 12px; color: #555555; margin: 8px 0 0 0;'>Para consultar la sintaxis valida de cada comando, envie <b>HELP[]</b> en el asunto.</p>\r\n");
 
         return wrapContainer("Reporte de Error en Peticion", "ALERTA", sb.toString());
     }
@@ -110,13 +110,13 @@ public final class HtmlTemplate {
     public static String successCard(String title, String message, String detailsHtml) {
         StringBuilder sb = new StringBuilder();
         sb.append("<div style='background: #f7faf7; border: 1px solid ").append(COLOR_SUCCESS)
-          .append("; border-left: 5px solid ").append(COLOR_SUCCESS).append("; padding: 14px; margin-bottom: 14px;'>");
+          .append("; border-left: 5px solid ").append(COLOR_SUCCESS).append("; padding: 14px; margin-bottom: 14px;'>\r\n");
         sb.append("  <p style='color: ").append(COLOR_SUCCESS)
-          .append("; font-weight: bold; margin: 0 0 6px 0; font-size: 14px;'>[EXITO] Operacion Ejecutada Correctamente</p>");
-        sb.append("  <p style='color: ").append(COLOR_TEXT).append("; font-size: 13px; margin: 0;'>").append(message).append("</p>");
-        sb.append("</div>");
+          .append("; font-weight: bold; margin: 0 0 6px 0; font-size: 14px;'>[EXITO] Operacion Ejecutada Correctamente</p>\r\n");
+        sb.append("  <p style='color: ").append(COLOR_TEXT).append("; font-size: 13px; margin: 0;'>").append(message).append("</p>\r\n");
+        sb.append("</div>\r\n");
         if (detailsHtml != null && !detailsHtml.trim().isEmpty()) {
-            sb.append("<div style='margin-top: 14px;'>").append(detailsHtml).append("</div>");
+            sb.append("<div style='margin-top: 14px;'>\r\n").append(detailsHtml).append("</div>\r\n");
         }
         return wrapContainer(title, "EXITO", sb.toString());
     }
@@ -126,32 +126,32 @@ public final class HtmlTemplate {
      */
     public static String table(String[] headers, List<String[]> rows) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<div style='overflow-x: auto; margin: 10px 0;'>");
-        sb.append("<table style='width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; border: 1px solid ").append(COLOR_BORDER).append(";'>");
+        sb.append("<div style='overflow-x: auto; margin: 10px 0;'>\r\n");
+        sb.append("<table style='width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; border: 1px solid ").append(COLOR_BORDER).append(";'>\r\n");
 
         // Encabezados
-        sb.append("  <thead><tr style='background-color: ").append(COLOR_PRIMARY).append("; color: #ffffff;'>");
+        sb.append("  <thead><tr style='background-color: ").append(COLOR_PRIMARY).append("; color: #ffffff;'>\r\n");
         for (String h : headers) {
-            sb.append("    <th style='padding: 8px 10px; border: 1px solid #777777; font-weight: bold;'>").append(h).append("</th>");
+            sb.append("    <th style='padding: 8px 10px; border: 1px solid #777777; font-weight: bold;'>").append(h).append("</th>\r\n");
         }
-        sb.append("  </tr></thead>");
+        sb.append("  </tr></thead>\r\n");
 
         // Filas
-        sb.append("  <tbody>");
+        sb.append("  <tbody>\r\n");
         if (rows == null || rows.isEmpty()) {
-            sb.append("    <tr><td colspan='").append(headers.length).append("' style='padding: 14px; text-align: center; color: #666666;'>No se encontraron registros en el sistema.</td></tr>");
+            sb.append("    <tr><td colspan='").append(headers.length).append("' style='padding: 14px; text-align: center; color: #666666;'>No se encontraron registros en el sistema.</td></tr>\r\n");
         } else {
             for (int i = 0; i < rows.size(); i++) {
                 String bg = (i % 2 == 0) ? "#ffffff" : "#fbfbfb";
-                sb.append("    <tr style='background-color: ").append(bg).append("; color: ").append(COLOR_TEXT).append(";'>");
+                sb.append("    <tr style='background-color: ").append(bg).append("; color: ").append(COLOR_TEXT).append(";'>\r\n");
                 for (String cell : rows.get(i)) {
                     sb.append("      <td style='padding: 7px 10px; border: 1px solid ").append(COLOR_BORDER).append(";'>")
-                      .append(cell != null ? cell : "").append("</td>");
+                      .append(cell != null ? cell : "").append("</td>\r\n");
                 }
-                sb.append("    </tr>");
+                sb.append("    </tr>\r\n");
             }
         }
-        sb.append("  </tbody></table></div>");
+        sb.append("  </tbody>\r\n</table>\r\n</div>\r\n");
         return sb.toString();
     }
 
